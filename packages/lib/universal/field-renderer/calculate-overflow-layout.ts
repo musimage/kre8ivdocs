@@ -63,6 +63,44 @@ type OverflowLayoutResult = {
   wrap: 'word' | 'none';
   textAlign: 'left' | 'center' | 'right';
   verticalAlign: 'top' | 'middle' | 'bottom';
+  /** KRE8ivDocs: font size to render with when it differs from the requested one ('shrink' mode). */
+  fontSize?: number;
+};
+
+/** KRE8ivDocs: smallest font size 'shrink' mode will go down to before cropping. */
+export const SHRINK_TO_FIT_MIN_FONT_SIZE = 6;
+const SHRINK_TO_FIT_STEP = 0.5;
+
+/**
+ * KRE8ivDocs: largest font size (<= requested, >= min) whose word-wrapped text fits the box height.
+ */
+export const calculateShrinkToFitFontSize = (params: {
+  textToRender: string;
+  fontSize: number;
+  fontFamily: string;
+  lineHeight: number;
+  letterSpacing: number;
+  baseWidth: number;
+  baseHeight: number;
+}): number => {
+  const { textToRender, fontFamily, lineHeight, letterSpacing, baseWidth, baseHeight } = params;
+  const node = new Konva.Text({ text: textToRender, fontFamily, lineHeight, letterSpacing, width: baseWidth, wrap: 'word' });
+
+  let fontSize = params.fontSize;
+
+  while (fontSize > SHRINK_TO_FIT_MIN_FONT_SIZE) {
+    node.fontSize(fontSize);
+
+    if (node.height() <= baseHeight) {
+      break;
+    }
+
+    fontSize = Math.max(SHRINK_TO_FIT_MIN_FONT_SIZE, fontSize - SHRINK_TO_FIT_STEP);
+  }
+
+  node.destroy();
+
+  return fontSize;
 };
 
 /**
@@ -260,7 +298,29 @@ export const calculateOverflowLayout = (params: OverflowLayoutParams): OverflowL
   const { overflowMode, isLabel, baseX, baseY, baseWidth, baseHeight } = params;
 
   // No overflow for placeholders or crop mode — return original field bounds.
-  if (isLabel || overflowMode === 'crop') {
+  // KRE8ivDocs: shrink the font until the wrapped text fits, then crop.
+  if (!isLabel && overflowMode === 'shrink') {
+    return {
+      x: baseX,
+      y: baseY,
+      width: baseWidth,
+      height: baseHeight,
+      wrap: 'word',
+      textAlign: params.textAlign,
+      verticalAlign: params.verticalAlign,
+      fontSize: calculateShrinkToFitFontSize({
+        textToRender: params.textToRender,
+        fontSize: params.fontSize,
+        fontFamily: params.fontFamily,
+        lineHeight: params.lineHeight,
+        letterSpacing: params.letterSpacing,
+        baseWidth,
+        baseHeight,
+      }),
+    };
+  }
+
+  if (isLabel || overflowMode === 'crop' || overflowMode === 'shrink') {
     return {
       x: baseX,
       y: baseY,

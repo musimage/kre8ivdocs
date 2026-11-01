@@ -132,7 +132,7 @@ const upsertFieldText = (field: FieldToRender, options: RenderFieldElementOption
     verticalAlign: overflowLayout.verticalAlign,
     wrap: overflowLayout.wrap,
     text: textToRender,
-    fontSize: textFontSize,
+    fontSize: overflowLayout.fontSize ?? textFontSize,
     align: overflowLayout.textAlign,
     lineHeight: textLineHeight,
     letterSpacing: textLetterSpacing,
@@ -242,6 +242,7 @@ export const renderGenericTextFieldElement = (field: FieldToRender, options: Ren
     fieldText.height(newOverflowLayout.height);
     fieldText.wrap(newOverflowLayout.wrap);
     fieldText.verticalAlign(newOverflowLayout.verticalAlign);
+    fieldText.fontSize(newOverflowLayout.fontSize ?? textFontSize);
 
     fieldGroup.getLayer()?.batchDraw();
   });

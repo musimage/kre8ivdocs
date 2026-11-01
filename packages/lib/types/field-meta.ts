@@ -27,10 +27,11 @@ export const DEFAULT_EMAIL_OVERFLOW_MODE = 'auto';
  * - 'horizontal': Overflow horizontally, will not wrap at all.
  * - 'vertical': Overflow vertically, will wrap at the field width.
  * - 'crop': Crop the text to the field bounds, will not overflow at all.
+ * - 'shrink': KRE8ivDocs. Shrink the font until the wrapped text fits (min 6pt), then crop.
  *
  * @default 'crop'
  */
-export const ZFieldOverflowMode = z.enum(['auto', 'horizontal', 'vertical', 'crop']);
+export const ZFieldOverflowMode = z.enum(['auto', 'horizontal', 'vertical', 'crop', 'shrink']);
 export type TFieldOverflowMode = z.infer<typeof ZFieldOverflowMode>;
 
 /**
