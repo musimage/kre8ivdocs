@@ -7,6 +7,7 @@ import { Alert, AlertDescription, AlertTitle } from '@documenso/ui/primitives/al
 import { Checkbox } from '@documenso/ui/primitives/checkbox';
 import type { DataTableColumnDef, RowSelectionState } from '@documenso/ui/primitives/data-table';
 import { DataTable } from '@documenso/ui/primitives/data-table';
+import { useWindowSize } from '@documenso/lib/client-only/hooks/use-window-size';
 import { DataTablePagination } from '@documenso/ui/primitives/data-table-pagination';
 import { Skeleton } from '@documenso/ui/primitives/skeleton';
 import { TableCell } from '@documenso/ui/primitives/table';
@@ -64,6 +65,9 @@ export const TemplatesTable = ({
     return `${path}/${row.envelopeId}`;
   };
 
+  const { width: windowWidth } = useWindowSize();
+  const isMobile = windowWidth > 0 && windowWidth < 768;
+
   const columns = useMemo(() => {
     const cols: DataTableColumnDef<TemplatesTableRow>[] = [];
 
@@ -94,6 +98,7 @@ export const TemplatesTable = ({
 
     cols.push(
       {
+        id: 'createdAt',
         header: _(msg`Created`),
         accessorKey: 'createdAt',
         cell: ({ row }) => i18n.date(row.original.createdAt),
@@ -178,6 +183,7 @@ export const TemplatesTable = ({
             </Tooltip>
           </div>
         ),
+        id: 'type',
         accessorKey: 'type',
         cell: ({ row }) => {
           const isFromOtherTeam = row.original.teamId !== team?.id;
@@ -272,6 +278,10 @@ export const TemplatesTable = ({
         rowSelection={rowSelection}
         onRowSelectionChange={onRowSelectionChange}
         getRowId={(row) => row.envelopeId}
+        columnVisibility={{
+          createdAt: !isMobile,
+          type: !isMobile,
+        }}
         error={{
           enable: isLoadingError || false,
         }}

@@ -7,6 +7,7 @@ import type { TFindDocumentsResponse } from '@documenso/trpc/server/document-rou
 import { Checkbox } from '@documenso/ui/primitives/checkbox';
 import type { DataTableColumnDef, RowSelectionState } from '@documenso/ui/primitives/data-table';
 import { DataTable } from '@documenso/ui/primitives/data-table';
+import { useWindowSize } from '@documenso/lib/client-only/hooks/use-window-size';
 import { DataTablePagination } from '@documenso/ui/primitives/data-table-pagination';
 import { Skeleton } from '@documenso/ui/primitives/skeleton';
 import { TableCell } from '@documenso/ui/primitives/table';
@@ -53,6 +54,9 @@ export const DocumentsTable = ({
 
   const updateSearchParams = useUpdateSearchParams();
 
+  const { width: windowWidth } = useWindowSize();
+  const isMobile = windowWidth > 0 && windowWidth < 768;
+
   const columns = useMemo(() => {
     const cols: DataTableColumnDef<DocumentsTableRow>[] = [];
 
@@ -83,6 +87,7 @@ export const DocumentsTable = ({
 
     cols.push(
       {
+        id: 'createdAt',
         header: _(msg`Created`),
         accessorKey: 'createdAt',
         cell: ({ row }) => i18n.date(row.original.createdAt, { ...DateTime.DATETIME_SHORT, hourCycle: 'h12' }),
@@ -98,6 +103,7 @@ export const DocumentsTable = ({
       },
       {
         header: _(msg`Recipient`),
+        id: 'recipient',
         accessorKey: 'recipient',
         cell: ({ row }) => (
           <StackAvatarsWithTooltip recipients={row.original.recipients} documentStatus={row.original.status} />
@@ -153,7 +159,9 @@ export const DocumentsTable = ({
         totalPages={results.totalPages}
         onPaginationChange={onPaginationChange}
         columnVisibility={{
-          sender: team !== undefined,
+          sender: team !== undefined && !isMobile,
+          createdAt: !isMobile,
+          recipient: !isMobile,
         }}
         error={{
           enable: isLoadingError || false,

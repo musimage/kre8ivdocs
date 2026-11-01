@@ -63,9 +63,9 @@ export const Header = ({ className, fullWidth = false, ...props }: HeaderProps) 
       >
         <Link
           to={getRootHref(params)}
-          className="hidden rounded-md ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 md:inline"
+          className="hidden rounded-md ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
         >
-          <BrandingLogo className="h-6 w-auto" />
+          <BrandingLogo className="h-5 w-auto md:h-6" />
         </Link>
 
         <AppNavDesktop setIsCommandMenuOpen={setIsCommandMenuOpen} />
