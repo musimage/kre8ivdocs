@@ -3,7 +3,7 @@ import { i18n, type MessageDescriptor } from '@lingui/core';
 
 export const appMetaTags = (title?: MessageDescriptor) => {
   const description =
-    'Join Documenso, the open signing infrastructure, and get a 10x better signing experience. Pricing starts at $30/mo. forever! Sign in now and enjoy a faster, smarter, and more beautiful document signing process. Integrates with your favorite tools, customizable, and expandable. Support our mission and become a part of our open-source community.';
+    'KRE8ivDocs by KRE8ivU. Sign documents online, fast and secure.';
 
   return [
     {
@@ -16,11 +16,11 @@ export const appMetaTags = (title?: MessageDescriptor) => {
     {
       name: 'keywords',
       content:
-        'Documenso, open source, DocuSign alternative, document signing, open signing infrastructure, open-source community, fast signing, beautiful signing, smart templates',
+        'KRE8ivDocs, KRE8ivU, document signing, open signing infrastructure, open-source community, fast signing, beautiful signing, smart templates',
     },
     {
       name: 'author',
-      content: 'Documenso, Inc.',
+      content: 'KRE8ivU',
     },
     {
       name: 'robots',
@@ -28,7 +28,7 @@ export const appMetaTags = (title?: MessageDescriptor) => {
     },
     {
       property: 'og:title',
-      content: 'Documenso - The Open Source DocuSign Alternative',
+      content: 'KRE8ivDocs by KRE8ivU',
     },
     {
       property: 'og:description',
