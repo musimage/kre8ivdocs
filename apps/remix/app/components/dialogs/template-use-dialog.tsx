@@ -293,9 +293,14 @@ export function TemplateUseDialog({
     <Dialog open={open} onOpenChange={(value) => !form.formState.isSubmitting && setOpen(value)}>
       <DialogTrigger asChild>
         {trigger || (
-          <Button variant="outline" className="bg-background">
+          <Button variant="outline" className="bg-background px-3 md:px-4">
             <Plus className="mr-2 -ml-1 h-4 w-4" />
-            <Trans>Use Template</Trans>
+            <span className="md:hidden">
+              <Trans>Use</Trans>
+            </span>
+            <span className="hidden md:inline">
+              <Trans>Use Template</Trans>
+            </span>
           </Button>
         )}
       </DialogTrigger>

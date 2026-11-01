@@ -63,7 +63,7 @@ export const Header = ({ className, fullWidth = false, ...props }: HeaderProps) 
       >
         <Link
           to={getRootHref(params)}
-          className="hidden rounded-md ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+          className="shrink-0 rounded-md ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
         >
           <BrandingLogo className="h-5 w-auto md:h-6" />
         </Link>

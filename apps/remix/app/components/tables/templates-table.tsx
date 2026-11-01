@@ -108,7 +108,7 @@ export const TemplatesTable = ({
         cell: ({ row }) => (
           <Link
             to={formatTemplateLink(row.original)}
-            className="block max-w-[10rem] cursor-pointer truncate font-medium hover:underline md:max-w-[20rem]"
+            className="block max-w-[7rem] cursor-pointer truncate font-medium hover:underline sm:max-w-[10rem] md:max-w-[20rem]"
           >
             {row.original.title}
           </Link>
@@ -279,6 +279,7 @@ export const TemplatesTable = ({
         onRowSelectionChange={onRowSelectionChange}
         getRowId={(row) => row.envelopeId}
         columnVisibility={{
+          select: !isMobile,
           createdAt: !isMobile,
           type: !isMobile,
         }}
