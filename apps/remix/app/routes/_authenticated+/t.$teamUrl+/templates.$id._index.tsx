@@ -13,7 +13,7 @@ import { Spinner } from '@documenso/ui/primitives/spinner';
 import { msg } from '@lingui/core/macro';
 import { Trans } from '@lingui/react/macro';
 import { DocumentSigningOrder, SigningStatus } from '@prisma/client';
-import { ChevronLeft, LucideEdit } from 'lucide-react';
+import { ChevronLeft, ClipboardListIcon, LucideEdit } from 'lucide-react';
 import { Link, useNavigate } from 'react-router';
 
 import { TemplateBulkSendDialog } from '~/components/dialogs/template-bulk-send-dialog';
@@ -117,13 +117,13 @@ export default function TemplatePage({ params }: Route.ComponentProps) {
 
   return (
     <div className="mx-auto -mt-4 w-full max-w-screen-xl px-4 md:px-8">
-      <div className="flex flex-row justify-between">
+      <div className="flex flex-row items-start justify-between gap-2">
         <Link to={templateRootPath} className="flex items-center text-documenso-700 hover:opacity-80">
           <ChevronLeft className="mr-2 inline-block h-5 w-5" />
           <Trans>Templates</Trans>
         </Link>
 
-        <div className="flex shrink-0 flex-row space-x-4">
+        <div className="flex flex-row flex-wrap justify-end gap-2 md:shrink-0 md:gap-4">
           {isOwnTeamTemplate && (
             <>
               <TemplateDirectLinkDialog
@@ -137,6 +137,13 @@ export default function TemplatePage({ params }: Route.ComponentProps) {
                 templateId={mapSecondaryIdToTemplateId(envelope.secondaryId)}
                 recipients={envelope.recipients}
               />
+
+              <Button asChild size="sm" variant="outline">
+                <Link to={`/t/${team.url}/intake/${envelope.id}`}>
+                  <ClipboardListIcon className="mr-1.5 h-3.5 w-3.5" />
+                  Intake form
+                </Link>
+              </Button>
 
               <Button asChild size="sm">
                 <Link to={`${templateRootPath}/${envelope.id}/edit`}>

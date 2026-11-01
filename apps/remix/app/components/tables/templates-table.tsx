@@ -1,30 +1,51 @@
-import { useLimits } from '@documenso/ee/server-only/limits/provider/client';
-import { useUpdateSearchParams } from '@documenso/lib/client-only/hooks/use-update-search-params';
-import { useCurrentOrganisation } from '@documenso/lib/client-only/providers/organisation';
-import { formatTemplatesPath } from '@documenso/lib/utils/teams';
-import type { TFindTemplatesResponse } from '@documenso/trpc/server/template-router/schema';
-import { Alert, AlertDescription, AlertTitle } from '@documenso/ui/primitives/alert';
-import { Checkbox } from '@documenso/ui/primitives/checkbox';
-import type { DataTableColumnDef, RowSelectionState } from '@documenso/ui/primitives/data-table';
-import { DataTable } from '@documenso/ui/primitives/data-table';
-import { useWindowSize } from '@documenso/lib/client-only/hooks/use-window-size';
-import { DataTablePagination } from '@documenso/ui/primitives/data-table-pagination';
-import { Skeleton } from '@documenso/ui/primitives/skeleton';
-import { TableCell } from '@documenso/ui/primitives/table';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@documenso/ui/primitives/tooltip';
-import { msg } from '@lingui/core/macro';
-import { useLingui } from '@lingui/react';
-import { Trans } from '@lingui/react/macro';
-import { AlertTriangle, Building2Icon, Globe2Icon, InfoIcon, Link2Icon, Loader, LockIcon } from 'lucide-react';
-import { useMemo, useTransition } from 'react';
-import { Link } from 'react-router';
+import { useLimits } from "@documenso/ee/server-only/limits/provider/client";
+import { useUpdateSearchParams } from "@documenso/lib/client-only/hooks/use-update-search-params";
+import { useCurrentOrganisation } from "@documenso/lib/client-only/providers/organisation";
+import { formatTemplatesPath } from "@documenso/lib/utils/teams";
+import type { TFindTemplatesResponse } from "@documenso/trpc/server/template-router/schema";
+import {
+  Alert,
+  AlertDescription,
+  AlertTitle,
+} from "@documenso/ui/primitives/alert";
+import { Checkbox } from "@documenso/ui/primitives/checkbox";
+import type {
+  DataTableColumnDef,
+  RowSelectionState,
+} from "@documenso/ui/primitives/data-table";
+import { DataTable } from "@documenso/ui/primitives/data-table";
+import { Button } from "@documenso/ui/primitives/button";
+import { useWindowSize } from "@documenso/lib/client-only/hooks/use-window-size";
+import { DataTablePagination } from "@documenso/ui/primitives/data-table-pagination";
+import { Skeleton } from "@documenso/ui/primitives/skeleton";
+import { TableCell } from "@documenso/ui/primitives/table";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@documenso/ui/primitives/tooltip";
+import { msg } from "@lingui/core/macro";
+import { useLingui } from "@lingui/react";
+import { Trans } from "@lingui/react/macro";
+import {
+  AlertTriangle,
+  Building2Icon,
+  ClipboardListIcon,
+  Globe2Icon,
+  InfoIcon,
+  Link2Icon,
+  Loader,
+  LockIcon,
+} from "lucide-react";
+import { useMemo, useTransition } from "react";
+import { Link } from "react-router";
 
-import { TemplateType } from '~/components/general/template/template-type';
-import { useCurrentTeam } from '~/providers/team';
+import { TemplateType } from "~/components/general/template/template-type";
+import { useCurrentTeam } from "~/providers/team";
 
-import { TemplateUseDialog } from '../dialogs/template-use-dialog';
-import { TemplateDirectLinkBadge } from '../general/template/template-direct-link-badge';
-import { TemplatesTableActionDropdown } from './templates-table-action-dropdown';
+import { TemplateUseDialog } from "../dialogs/template-use-dialog";
+import { TemplateDirectLinkBadge } from "../general/template/template-direct-link-badge";
+import { TemplatesTableActionDropdown } from "./templates-table-action-dropdown";
 
 type TemplatesTableProps = {
   data?: TFindTemplatesResponse;
@@ -37,7 +58,7 @@ type TemplatesTableProps = {
   onRowSelectionChange?: (selection: RowSelectionState) => void;
 };
 
-type TemplatesTableRow = TFindTemplatesResponse['data'][number];
+type TemplatesTableRow = TFindTemplatesResponse["data"][number];
 
 export const TemplatesTable = ({
   data,
@@ -73,11 +94,13 @@ export const TemplatesTable = ({
 
     if (enableSelection) {
       cols.push({
-        id: 'select',
+        id: "select",
         header: ({ table }) => (
           <Checkbox
             checked={table.getIsAllPageRowsSelected()}
-            onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+            onCheckedChange={(value) =>
+              table.toggleAllPageRowsSelected(!!value)
+            }
             aria-label={_(msg`Select all`)}
             onClick={(e) => e.stopPropagation()}
           />
@@ -98,9 +121,9 @@ export const TemplatesTable = ({
 
     cols.push(
       {
-        id: 'createdAt',
+        id: "createdAt",
         header: _(msg`Created`),
-        accessorKey: 'createdAt',
+        accessorKey: "createdAt",
         cell: ({ row }) => i18n.date(row.original.createdAt),
       },
       {
@@ -133,8 +156,9 @@ export const TemplatesTable = ({
 
                     <p>
                       <Trans>
-                        Public templates are connected to your public profile. Any modifications to public templates
-                        will also appear in your public profile.
+                        Public templates are connected to your public profile.
+                        Any modifications to public templates will also appear
+                        in your public profile.
                       </Trans>
                     </p>
                   </li>
@@ -146,22 +170,34 @@ export const TemplatesTable = ({
 
                     <p>
                       <Trans>
-                        Direct link templates contain one dynamic recipient placeholder. Anyone with access to this link
-                        can sign the document, and it will then appear on your documents page.
+                        Direct link templates contain one dynamic recipient
+                        placeholder. Anyone with access to this link can sign
+                        the document, and it will then appear on your documents
+                        page.
                       </Trans>
                     </p>
                   </li>
                   <li>
                     <h2 className="mb-2 flex flex-row items-center font-semibold">
                       <LockIcon className="mr-2 h-5 w-5 text-blue-600 dark:text-blue-300" />
-                      {team?.id ? <Trans>Team Only</Trans> : <Trans>Private</Trans>}
+                      {team?.id ? (
+                        <Trans>Team Only</Trans>
+                      ) : (
+                        <Trans>Private</Trans>
+                      )}
                     </h2>
 
                     <p>
                       {team?.id ? (
-                        <Trans>Team only templates are not linked anywhere and are visible only to your team.</Trans>
+                        <Trans>
+                          Team only templates are not linked anywhere and are
+                          visible only to your team.
+                        </Trans>
                       ) : (
-                        <Trans>Private templates can only be modified and viewed by you.</Trans>
+                        <Trans>
+                          Private templates can only be modified and viewed by
+                          you.
+                        </Trans>
                       )}
                     </p>
                   </li>
@@ -173,8 +209,9 @@ export const TemplatesTable = ({
 
                     <p>
                       <Trans>
-                        Organisation templates are shared across all teams within the same organisation. Only the owning
-                        team can edit them.
+                        Organisation templates are shared across all teams
+                        within the same organisation. Only the owning team can
+                        edit them.
                       </Trans>
                     </p>
                   </li>
@@ -183,8 +220,8 @@ export const TemplatesTable = ({
             </Tooltip>
           </div>
         ),
-        id: 'type',
-        accessorKey: 'type',
+        id: "type",
+        accessorKey: "type",
         cell: ({ row }) => {
           const isFromOtherTeam = row.original.teamId !== team?.id;
 
@@ -193,7 +230,9 @@ export const TemplatesTable = ({
               <TemplateType type={row.original.type} />
 
               {isFromOtherTeam && row.original.team?.name && (
-                <span className="ml-2 text-muted-foreground text-xs">({row.original.team.name})</span>
+                <span className="ml-2 text-muted-foreground text-xs">
+                  ({row.original.team.name})
+                </span>
               )}
 
               {row.original.directLink?.token && (
@@ -209,20 +248,41 @@ export const TemplatesTable = ({
       },
       {
         header: _(msg`Actions`),
-        accessorKey: 'actions',
+        accessorKey: "actions",
         cell: ({ row }) => {
           return (
-            <div className="flex items-center gap-x-4">
-              <TemplateUseDialog
-                envelopeId={row.original.envelopeId}
-                templateId={row.original.id}
-                templateSigningOrder={row.original.templateMeta?.signingOrder}
-                documentDistributionMethod={row.original.templateMeta?.distributionMethod}
-                recipients={row.original.recipients}
-                documentRootPath={documentRootPath}
-              />
+            <div className="flex items-center gap-x-2 md:gap-x-4">
+              <div className="flex flex-col items-stretch gap-2 md:flex-row md:items-center md:gap-x-4">
+                <TemplateUseDialog
+                  envelopeId={row.original.envelopeId}
+                  templateId={row.original.id}
+                  templateSigningOrder={row.original.templateMeta?.signingOrder}
+                  documentDistributionMethod={
+                    row.original.templateMeta?.distributionMethod
+                  }
+                  recipients={row.original.recipients}
+                  documentRootPath={documentRootPath}
+                />
 
-              <TemplatesTableActionDropdown row={row.original} teamId={team?.id} templateRootPath={templateRootPath} />
+                <Button
+                  asChild
+                  variant="outline"
+                  className="bg-background px-3 md:px-4"
+                >
+                  <Link
+                    to={`/t/${team?.url}/intake/${row.original.envelopeId}`}
+                  >
+                    <ClipboardListIcon className="mr-2 -ml-1 h-4 w-4" />
+                    Intake form
+                  </Link>
+                </Button>
+              </div>
+
+              <TemplatesTableActionDropdown
+                row={row.original}
+                teamId={team?.id}
+                templateRootPath={templateRootPath}
+              />
             </div>
           );
         },
@@ -230,7 +290,13 @@ export const TemplatesTable = ({
     );
 
     return cols;
-  }, [documentRootPath, team?.id, templateRootPath, enableSelection]);
+  }, [
+    documentRootPath,
+    team?.id,
+    team?.url,
+    templateRootPath,
+    enableSelection,
+  ]);
 
   const onPaginationChange = (page: number, perPage: number) => {
     startTransition(() => {
@@ -258,8 +324,11 @@ export const TemplatesTable = ({
           </AlertTitle>
           <AlertDescription className="mt-2">
             <Trans>
-              You have reached your document limit.{' '}
-              <Link className="underline underline-offset-4" to={`/o/${organisation.url}/settings/billing`}>
+              You have reached your document limit.{" "}
+              <Link
+                className="underline underline-offset-4"
+                to={`/o/${organisation.url}/settings/billing`}
+              >
                 Upgrade your account to continue!
               </Link>
             </Trans>
@@ -317,7 +386,12 @@ export const TemplatesTable = ({
           ),
         }}
       >
-        {(table) => <DataTablePagination additionalInformation="VisibleCount" table={table} />}
+        {(table) => (
+          <DataTablePagination
+            additionalInformation="VisibleCount"
+            table={table}
+          />
+        )}
       </DataTable>
 
       {isPending && (
