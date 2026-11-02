@@ -67,7 +67,7 @@ export default function DocumentPage({ params }: Route.ComponentProps) {
     },
     {
       ...DO_NOT_INVALIDATE_QUERY_ON_MUTATION,
-      enabled: envelope && envelope.internalVersion === 2 && envelope.status === DocumentStatus.PENDING,
+      enabled: !!envelope && envelope.status === DocumentStatus.PENDING,
     },
   );
 
@@ -185,7 +185,18 @@ export default function DocumentPage({ params }: Route.ComponentProps) {
             <CardContent className="p-2">
               {envelope.status !== DocumentStatus.COMPLETED && (
                 <DocumentReadOnlyFields
-                  fields={mapFieldsWithRecipients(envelope.fields, envelope.recipients)}
+                  fields={mapFieldsWithRecipients(envelope.fields, envelope.recipients).map((field) => {
+                    const sig = fieldSignatures?.find((s) => s.fieldId === field.id);
+                    return sig
+                      ? {
+                          ...field,
+                          signature: {
+                            signatureImageAsBase64: sig.signatureImageAsBase64,
+                            typedSignature: sig.typedSignature,
+                          } as never,
+                        }
+                      : field;
+                  })}
                   documentMeta={envelope.documentMeta || undefined}
                   showRecipientTooltip={true}
                   showRecipientColors={true}
