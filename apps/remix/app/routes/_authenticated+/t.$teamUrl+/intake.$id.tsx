@@ -74,7 +74,12 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const inputClass =
   "block w-full rounded-lg border border-input bg-background px-3 py-3 text-base text-foreground shadow-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/40";
 
-export default function IntakeFormPage({ params }: Route.ComponentProps) {
+// Remount per id so state from one form never leaks into another.
+export default function IntakeFormRoute(props: Route.ComponentProps) {
+  return <IntakeFormPage key={props.params.id} {...props} />;
+}
+
+function IntakeFormPage({ params }: Route.ComponentProps) {
   const team = useCurrentTeam();
   const { user } = useSession();
   const navigate = useNavigate();
