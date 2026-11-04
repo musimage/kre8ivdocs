@@ -110,7 +110,7 @@ export function DocumentSigningRejectDialog({
       <DialogTrigger asChild>
         {trigger ?? (
           <Button variant="outline">
-            Something wrong? Send back
+            Needs to be fixed
           </Button>
         )}
       </DialogTrigger>
@@ -118,7 +118,7 @@ export function DocumentSigningRejectDialog({
       <DialogContent>
         <DialogHeader>
           <DialogTitle>
-            Something wrong? Send back
+            Needs to be fixed
           </DialogTitle>
 
           <DialogDescription>
@@ -162,7 +162,7 @@ export function DocumentSigningRejectDialog({
                 loading={form.formState.isSubmitting}
                 disabled={!form.formState.isValid}
               >
-                Something wrong? Send back
+                Needs to be fixed
               </Button>
             </DialogFooter>
           </form>
