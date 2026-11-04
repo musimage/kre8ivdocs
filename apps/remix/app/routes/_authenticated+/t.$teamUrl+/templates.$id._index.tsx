@@ -141,7 +141,7 @@ export default function TemplatePage({ params }: Route.ComponentProps) {
               <Button asChild size="sm" variant="outline">
                 <Link to={`/t/${team.url}/intake/${envelope.id}`}>
                   <ClipboardListIcon className="mr-1.5 h-3.5 w-3.5" />
-                  Intake form
+                  Fill in form
                 </Link>
               </Button>
 

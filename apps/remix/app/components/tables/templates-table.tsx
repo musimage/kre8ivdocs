@@ -273,7 +273,7 @@ export const TemplatesTable = ({
                     to={`/t/${team?.url}/intake/${row.original.envelopeId}`}
                   >
                     <ClipboardListIcon className="mr-2 -ml-1 h-4 w-4" />
-                    Intake form
+                    Fill in form
                   </Link>
                 </Button>
               </div>

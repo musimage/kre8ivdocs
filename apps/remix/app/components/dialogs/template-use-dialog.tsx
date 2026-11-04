@@ -316,6 +316,9 @@ export function TemplateUseDialog({
               <Trans>Add the recipients to create the document with</Trans>
             )}
           </DialogDescription>
+          <p className="text-muted-foreground text-sm" data-testid="fill-in-form-hint">
+            To type in the Guardian's answers, use Fill in form.
+          </p>
         </DialogHeader>
 
         <Form {...form}>
