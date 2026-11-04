@@ -58,9 +58,9 @@ export const DocumentsTableActionButton = ({ row }: DocumentsTableActionButtonPr
   })
     .with(isOwner ? { isDraft: true, isOwner: true } : { isDraft: true, isCurrentTeamDocument: true }, () => (
       <Button className="w-auto px-3 md:w-32 md:px-4" asChild>
-        <Link to={formatPath}>
+        <Link to={`/t/${team.url}/intake/${row.envelopeId}`}>
           <Edit className="mr-2 -ml-1 h-4 w-4" />
-          <Trans>Edit</Trans>
+          Fill in form
         </Link>
       </Button>
     ))

@@ -12,7 +12,7 @@ import { Spinner } from "@documenso/ui/primitives/spinner";
 import { useToast } from "@documenso/ui/primitives/use-toast";
 import { FieldType } from "@prisma/client";
 import { CheckIcon, ChevronLeft } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router";
 
 import {
@@ -91,6 +91,13 @@ export default function IntakeFormPage({ params }: Route.ComponentProps) {
     trpc.template.createDocumentFromTemplate.useMutation();
   const { mutateAsync: deleteRecipient } =
     trpc.envelope.recipient.delete.useMutation();
+  const { mutateAsync: updateFields } =
+    trpc.envelope.field.updateMany.useMutation();
+  const { mutateAsync: updateRecipients } =
+    trpc.envelope.recipient.updateMany.useMutation();
+
+  const isDraft = envelope?.type === "DOCUMENT" && envelope?.status === "DRAFT";
+  const [saveState, setSaveState] = useState<"saved" | "dirty" | "saving" | "error">("saved");
 
   const storageKey = `kre8ivdocs-intake:${team.id}:${params.id}`;
 
@@ -127,6 +134,29 @@ export default function IntakeFormPage({ params }: Route.ComponentProps) {
           : { name: "", email: "" };
     }
 
+    if (envelope.type === "DOCUMENT") {
+      const v: Record<string, string> = {};
+      const c: Record<string, boolean> = {};
+      for (const f of envelope.fields) {
+        const meta = (f.fieldMeta ?? {}) as {
+          text?: string;
+          values?: { checked?: boolean }[];
+        };
+        if (f.type === FieldType.TEXT) v[f.id] = meta.text ?? "";
+        if (f.type === FieldType.CHECKBOX)
+          c[f.id] = Boolean(meta.values?.[0]?.checked);
+      }
+      const ppl: Record<string, Person> = {};
+      for (const r of recipients) ppl[r.id] = { name: r.name, email: r.email };
+      const dir = recipients.find((r) => r.role === "director");
+      if (dir) setDirectorEmail(dir.email);
+      setValues(v);
+      setChecks(c);
+      setPeople(ppl);
+      setLoaded(true);
+      return;
+    }
+
     try {
       const raw = window.localStorage.getItem(storageKey);
       if (raw) {
@@ -146,9 +176,9 @@ export default function IntakeFormPage({ params }: Route.ComponentProps) {
     setLoaded(true);
   }, [envelope, loaded, recipients, storageKey, user.email, user.name]);
 
-  // Save progress locally on every change.
+  // Save progress locally on every change (template mode only).
   useEffect(() => {
-    if (!loaded) return;
+    if (!loaded || isDraft) return;
     const state: SavedState = { values, checks, people, directorEmail };
     try {
       window.localStorage.setItem(storageKey, JSON.stringify(state));
@@ -180,8 +210,6 @@ export default function IntakeFormPage({ params }: Route.ComponentProps) {
         readOnly?: boolean;
         values?: { value: string }[];
       };
-
-      if (meta.readOnly) continue;
 
       if (field.type === FieldType.TEXT) {
         const mapped = meta.label ? INTAKE_TEXT_LABELS[meta.label] : undefined;
@@ -233,6 +261,110 @@ export default function IntakeFormPage({ params }: Route.ComponentProps) {
     return result;
   }, [envelope, guardian]);
 
+  const saveDraft = async () => {
+    if (!envelope || !isDraft) return;
+    setSaveState("saving");
+    try {
+      const byId = new Map(envelope.fields.map((f) => [f.id, f]));
+      const data: Parameters<typeof updateFields>[0]["data"] = [];
+      for (const item of items) {
+        if (item.kind === "text") {
+          const f = byId.get(item.id);
+          const meta = (f?.fieldMeta ?? {}) as Record<string, unknown>;
+          data.push({
+            id: item.id,
+            type: FieldType.TEXT,
+            fieldMeta: {
+              ...meta,
+              type: "text",
+              text: (values[item.id] ?? "").trim(),
+              readOnly: true,
+            },
+          } as (typeof data)[number]);
+        } else {
+          for (const o of item.options) {
+            const f = byId.get(o.id);
+            const meta = (f?.fieldMeta ?? {}) as {
+              values?: { id: number; value: string; checked: boolean }[];
+            };
+            data.push({
+              id: o.id,
+              type: FieldType.CHECKBOX,
+              fieldMeta: {
+                ...meta,
+                type: "checkbox",
+                values: (meta.values ?? []).map((x, i) =>
+                  i === 0 ? { ...x, checked: Boolean(checks[o.id]) } : x,
+                ),
+                readOnly: true,
+              },
+            } as (typeof data)[number]);
+          }
+        }
+      }
+      if (data.length) await updateFields({ envelopeId: envelope.id, data });
+
+      const director =
+        EXECUTIVE_DIRECTOR_OPTIONS.find((d) => d.email === directorEmail) ??
+        EXECUTIVE_DIRECTOR_OPTIONS[0];
+      const rdata = recipients.flatMap((r) => {
+        if (r.role === "director")
+          return [{ id: r.id, email: director.email, name: director.name }];
+        const p = people[r.id];
+        if (!p || !EMAIL_RE.test(p.email.trim())) return [];
+        return [{ id: r.id, email: p.email.trim(), name: p.name.trim() }];
+      });
+      if (rdata.length)
+        await updateRecipients({ envelopeId: envelope.id, data: rdata });
+      setSaveState("saved");
+      return true;
+    } catch (err) {
+      console.error(err);
+      setSaveState("error");
+      return false;
+    }
+  };
+
+  // Autosave drafts to the server a moment after each change.
+  const hydrated = useRef(false);
+  const saveRef = useRef(saveDraft);
+  saveRef.current = saveDraft;
+  useEffect(() => {
+    if (!loaded || !isDraft) return;
+    if (!hydrated.current) {
+      hydrated.current = true;
+      return;
+    }
+    setSaveState("dirty");
+    const t = window.setTimeout(() => void saveRef.current(), 1200);
+    return () => window.clearTimeout(t);
+  }, [values, checks, people, directorEmail, loaded, isDraft]);
+
+  // Drafts with nothing to fill in go to the normal editor.
+  useEffect(() => {
+    if (isDraft && envelope && items.length === 0) {
+      void navigate(`${formatDocumentsPath(team.url)}/${envelope.id}/edit`, {
+        replace: true,
+      });
+    }
+  }, [isDraft, envelope, items.length]);
+
+  const onReviewAndSend = async () => {
+    if (!envelope) return;
+    setSubmitting(true);
+    const ok = await saveDraft();
+    if (!ok) {
+      toast({
+        title: "Could not save",
+        description: "Check your connection and try again.",
+        variant: "destructive",
+      });
+      setSubmitting(false);
+      return;
+    }
+    await navigate(`${formatDocumentsPath(team.url)}/${envelope.id}/edit`);
+  };
+
   if (isLoading) {
     return (
       <div className="flex flex-col items-center justify-center gap-2 py-32">
@@ -241,10 +373,16 @@ export default function IntakeFormPage({ params }: Route.ComponentProps) {
     );
   }
 
-  if (isError || !envelope || envelope.type !== "TEMPLATE") {
+  if (
+    isError ||
+    !envelope ||
+    (envelope.type !== "TEMPLATE" && !isDraft)
+  ) {
     return (
       <div className="mx-auto max-w-lg px-4 py-16 text-center">
-        <p className="text-lg">This template could not be found.</p>
+        <p className="text-lg">
+          This form could not be opened. It may already be sent.
+        </p>
         <Button asChild className="mt-6">
           <Link to={formatTemplatesPath(team.url)}>Back to templates</Link>
         </Button>
@@ -367,11 +505,12 @@ export default function IntakeFormPage({ params }: Route.ComponentProps) {
       window.localStorage.removeItem(storageKey);
 
       toast({
-        title: "Draft created",
-        description: "Review it, then press Send. Nothing has been sent.",
+        title: "Saved",
+        description:
+          "Keep filling any time. Find it under Documents, Draft. Nothing has been sent.",
       });
 
-      await navigate(`${formatDocumentsPath(team.url)}/${envelopeId}/edit`);
+      await navigate(`/t/${team.url}/intake/${envelopeId}`);
     } catch (err) {
       console.error(err);
       toast({
@@ -394,19 +533,32 @@ export default function IntakeFormPage({ params }: Route.ComponentProps) {
   return (
     <div className="mx-auto w-full max-w-2xl px-4 pb-32 text-base">
       <Link
-        to={`${formatTemplatesPath(team.url)}/${envelope.id}`}
+        to={
+          isDraft
+            ? formatDocumentsPath(team.url)
+            : `${formatTemplatesPath(team.url)}/${envelope.id}`
+        }
         className="flex items-center text-documenso-700 hover:opacity-80"
       >
         <ChevronLeft className="mr-1 h-5 w-5" />
-        Template
+        {isDraft ? "Documents" : "Template"}
       </Link>
 
       <h1 className="mt-4 font-semibold text-2xl">Fill in form</h1>
       <p className="mt-1 text-muted-foreground">{envelope.title}</p>
       <p className="mt-2 text-muted-foreground text-sm">
-        Answers save on this device as you type. Submitting creates a draft for
-        review. Nothing is sent until you press Send.
+        {isDraft
+          ? "Every box can be changed any time before you send. Changes save automatically. Nothing is sent until you press Send."
+          : "Start here. Press Save to keep your answers; you can come back and change or add anything later. Nothing is sent."}
       </p>
+      {isDraft && (
+        <p className="mt-2 font-medium text-sm" data-save-state={saveState}>
+          {saveState === "saved" && "All changes saved"}
+          {saveState === "dirty" && "Saving soon..."}
+          {saveState === "saving" && "Saving..."}
+          {saveState === "error" && "Not saved. Check connection."}
+        </p>
+      )}
 
       <section className="mt-8 rounded-xl border p-4">
         <h2 className="font-semibold text-lg">Recipients</h2>
@@ -584,25 +736,47 @@ export default function IntakeFormPage({ params }: Route.ComponentProps) {
       </p>
 
       <div className="fixed inset-x-0 bottom-0 z-40 border-t bg-background/95 p-3 backdrop-blur">
-        <div className="mx-auto flex max-w-2xl gap-3">
-          <Button
-            type="button"
-            variant="outline"
-            className="h-12 text-base"
-            onClick={clearForm}
-            disabled={submitting}
-          >
-            Clear
-          </Button>
-          <Button
-            type="button"
-            className="h-12 flex-1 text-base"
-            onClick={onSubmit}
-            loading={submitting}
-          >
-            Create draft for review
-          </Button>
-        </div>
+        {isDraft ? (
+          <div className="mx-auto flex max-w-2xl gap-3">
+            <Button
+              type="button"
+              variant="outline"
+              className="h-12 text-base"
+              onClick={() => void saveDraft()}
+              disabled={submitting}
+            >
+              Save
+            </Button>
+            <Button
+              type="button"
+              className="h-12 flex-1 text-base"
+              onClick={onReviewAndSend}
+              loading={submitting}
+            >
+              Review and send
+            </Button>
+          </div>
+        ) : (
+          <div className="mx-auto flex max-w-2xl gap-3">
+            <Button
+              type="button"
+              variant="outline"
+              className="h-12 text-base"
+              onClick={clearForm}
+              disabled={submitting}
+            >
+              Clear
+            </Button>
+            <Button
+              type="button"
+              className="h-12 flex-1 text-base"
+              onClick={onSubmit}
+              loading={submitting}
+            >
+              Save
+            </Button>
+          </div>
+        )}
       </div>
     </div>
   );
