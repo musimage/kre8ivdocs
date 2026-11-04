@@ -110,7 +110,7 @@ export function DocumentSigningRejectDialog({
       <DialogTrigger asChild>
         {trigger ?? (
           <Button variant="outline">
-            <Trans>Reject Document</Trans>
+            Something wrong? Send back
           </Button>
         )}
       </DialogTrigger>
@@ -118,11 +118,11 @@ export function DocumentSigningRejectDialog({
       <DialogContent>
         <DialogHeader>
           <DialogTitle>
-            <Trans>Reject Document</Trans>
+            Something wrong? Send back
           </DialogTitle>
 
           <DialogDescription>
-            <Trans>Are you sure you want to reject this document? This action cannot be undone.</Trans>
+            Tell KRE8ivU what to fix. They get an email, fix it, and send you a new copy to sign.
           </DialogDescription>
         </DialogHeader>
 
@@ -137,7 +137,7 @@ export function DocumentSigningRejectDialog({
                     <Textarea
                       {...field}
                       rows={4}
-                      placeholder={t`Please provide a reason for rejecting this document`}
+                      placeholder={'What needs to change?'}
                       disabled={form.formState.isSubmitting}
                     />
                   </FormControl>
@@ -162,7 +162,7 @@ export function DocumentSigningRejectDialog({
                 loading={form.formState.isSubmitting}
                 disabled={!form.formState.isValid}
               >
-                <Trans>Reject Document</Trans>
+                Something wrong? Send back
               </Button>
             </DialogFooter>
           </form>

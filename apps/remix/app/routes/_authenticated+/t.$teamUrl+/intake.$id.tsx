@@ -97,6 +97,10 @@ export default function IntakeFormPage({ params }: Route.ComponentProps) {
     trpc.envelope.recipient.updateMany.useMutation();
 
   const isDraft = envelope?.type === "DOCUMENT" && envelope?.status === "DRAFT";
+  const isRejected =
+    envelope?.type === "DOCUMENT" && envelope?.status === "REJECTED";
+  const { mutateAsync: duplicateEnvelope, isPending: isDuplicating } =
+    trpc.envelope.duplicate.useMutation();
   const [saveState, setSaveState] = useState<"saved" | "dirty" | "saving" | "error">("saved");
 
   const storageKey = `kre8ivdocs-intake:${team.id}:${params.id}`;
@@ -369,6 +373,33 @@ export default function IntakeFormPage({ params }: Route.ComponentProps) {
     return (
       <div className="flex flex-col items-center justify-center gap-2 py-32">
         <Spinner />
+      </div>
+    );
+  }
+
+  if (envelope && isRejected) {
+    const note = envelope.recipients.find((r) => r.rejectionReason)?.rejectionReason;
+    return (
+      <div className="mx-auto max-w-lg px-4 py-16">
+        <h1 className="font-semibold text-2xl">Sent back for changes</h1>
+        <p className="mt-2 text-muted-foreground">{envelope.title}</p>
+        <p className="mt-6 font-medium">What the guardian said:</p>
+        <p className="mt-1 whitespace-pre-wrap rounded-lg border p-3" data-testid="rejection-note">
+          {note || "(no note)"}
+        </p>
+        <Button
+          className="mt-6 h-12 w-full text-base"
+          loading={isDuplicating}
+          onClick={async () => {
+            const { id } = await duplicateEnvelope({ envelopeId: envelope.id });
+            await navigate(`/t/${team.url}/intake/${id}`);
+          }}
+        >
+          Fix it
+        </Button>
+        <p className="mt-3 text-muted-foreground text-sm">
+          Makes a new copy with all your answers. Change anything, then send it again.
+        </p>
       </div>
     );
   }

@@ -212,7 +212,7 @@ export const DocumentSigningPageViewV2 = () => {
                     trigger={
                       <Button variant="ghost" size="sm" className="w-full justify-start hover:text-destructive">
                         <BanIcon className="mr-2 h-4 w-4" />
-                        <Trans>Reject Document</Trans>
+                        Something wrong? Send back
                       </Button>
                     }
                   />
