@@ -161,7 +161,7 @@ export default function IntakeFormPage({ params }: Route.ComponentProps) {
     if (!envelope || !guardian) return [];
 
     const fields = envelope.fields
-      .filter((f) => f.recipientId === guardian.id)
+      // Fill-in fields may belong to staff (who fills first) or the guardian.
       .filter((f) => f.type === FieldType.TEXT || f.type === FieldType.CHECKBOX)
       .sort(
         (a, b) =>
