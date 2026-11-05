@@ -375,6 +375,68 @@ export const insertFieldInPDFV1 = async (pdf: PDFDocument, field: FieldWithSigna
         fontSize = Math.max(Math.min(fontSize * scalingFactor, maxFontSize), minFontSize);
       }
 
+      // KRE8ivDocs: 'shrink' overflow keeps text inside the field box.
+      if (field.type === FieldType.TEXT && meta?.success && meta.data.overflow === 'shrink') {
+        const shrinkPadding = 2;
+        const innerWidth = Math.max(fieldWidth - shrinkPadding * 2, 1);
+        const minShrink = 6;
+        let size = fontSize;
+        const lines0 = field.customText.split('\n');
+        const widest = (ls: string[], sz: number) => Math.max(...ls.map((l) => font.widthOfTextAtSize(l, sz)));
+        let lines = lines0;
+
+        if (lines0.length === 1 && widest(lines0, size) > innerWidth) {
+          size = Math.max(Math.min(size, (size * innerWidth) / widest(lines0, size)), minShrink);
+        }
+
+        let multiline = lines0.length > 1 || widest(lines0, size) > innerWidth;
+
+        if (multiline) {
+          size = fontSize;
+          for (;;) {
+            lines = breakLongString(field.customText, innerWidth, font, size).split('\n');
+            if (lines.length * font.heightAtSize(size) * 1.1 <= fieldHeight || size <= minShrink) {
+              break;
+            }
+            size = Math.max(size - 0.5, minShrink);
+          }
+        }
+
+        const shrinkField = pdf.getForm().createTextField(`text.${field.secondaryId}`);
+        const align =
+          textAlign === 'center' ? TextAlignment.Center : textAlign === 'right' ? TextAlignment.Right : TextAlignment.Left;
+        shrinkField.setAlignment(align);
+        if (multiline) {
+          shrinkField.enableMultiline();
+          shrinkField.disableCombing();
+          shrinkField.disableScrolling();
+        }
+        setTextFieldFontSize(shrinkField, font, size);
+        shrinkField.setText(multiline ? lines.join('\n') : field.customText);
+
+        let sx = fieldX + shrinkPadding;
+        let sy = pageHeight - fieldY - fieldHeight;
+        if (pageRotationInDegrees !== 0) {
+          const adj = adjustPositionForRotation(pageWidth, pageHeight, sx, sy, pageRotationInDegrees);
+          sx = adj.xPos;
+          sy = adj.yPos;
+        }
+
+        shrinkField.addToPage(page, {
+          x: sx,
+          y: sy,
+          width: innerWidth,
+          height: fieldHeight,
+          rotate: degrees(pageRotationInDegrees),
+          font,
+          borderWidth: 0,
+          borderColor: undefined,
+          backgroundColor: undefined,
+        });
+
+        return;
+      }
+
       /**
        * Calculate whether the field should be multiline.
        *
