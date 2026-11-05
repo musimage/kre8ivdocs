@@ -1,4 +1,4 @@
 # Shrink-to-fit in signed PDFs (v1)
 Problem: Template 1 is internalVersion 1. Sealing v1 docs uses insertFieldInPDFV1, which ignores fieldMeta.overflow='shrink' and lets long text run past the box (DOB spilled into School & grade). v2 sealing already uses the field-renderer shrink layout (commit 40dae69).
-Fix: in insertFieldInPDFV1, when a TEXT field has overflow 'shrink': small padding (2pt), keep the field rect exactly; pick the largest font <= requested that fits on one line; if that is below 6pt, wrap inside the box and shrink until the lines fit the height (min 6pt), then crop to the box. No change to other modes, templates, or the flow.
+Fix: in insertFieldInPDFV1, when a TEXT field has overflow 'shrink': small padding (2pt), keep the field rect exactly; pick the largest font <= requested that fits on one line; else wrap into whole lines and shrink until all lines fit the box height (min 4pt); only beyond that does it crop. No change to other modes, templates, or the flow.
 Verify: fake-data v1 copy of Template 1, long answers in DOB/Length/Review/Other, sign all 4, completed PDF text stays inside boxes (screenshot), delete test docs.

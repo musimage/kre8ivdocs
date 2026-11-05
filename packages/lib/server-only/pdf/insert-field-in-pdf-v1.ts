@@ -379,28 +379,21 @@ export const insertFieldInPDFV1 = async (pdf: PDFDocument, field: FieldWithSigna
       if (field.type === FieldType.TEXT && meta?.success && meta.data.overflow === 'shrink') {
         const shrinkPadding = 2;
         const innerWidth = Math.max(fieldWidth - shrinkPadding * 2, 1);
-        const minShrink = 6;
+        const minShrink = 4;
         let size = fontSize;
-        const lines0 = field.customText.split('\n');
+        let lines: string[] = [field.customText];
         const widest = (ls: string[], sz: number) => Math.max(...ls.map((l) => font.widthOfTextAtSize(l, sz)));
-        let lines = lines0;
-
-        if (lines0.length === 1 && widest(lines0, size) > innerWidth) {
-          size = Math.max(Math.min(size, (size * innerWidth) / widest(lines0, size)), minShrink);
-        }
-
-        let multiline = lines0.length > 1 || widest(lines0, size) > innerWidth;
-
-        if (multiline) {
-          size = fontSize;
-          for (;;) {
-            lines = breakLongString(field.customText, innerWidth, font, size).split('\n');
-            if (lines.length * font.heightAtSize(size) * 1.1 <= fieldHeight || size <= minShrink) {
-              break;
-            }
-            size = Math.max(size - 0.5, minShrink);
+        // Largest size where the whole text fits: one line if possible, else whole wrapped lines.
+        for (; size >= minShrink; size -= 0.25) {
+          lines = field.customText.includes('\n') || widest([field.customText], size) > innerWidth
+            ? breakLongString(field.customText, innerWidth, font, size).split('\n')
+            : [field.customText];
+          if (widest(lines, size) <= innerWidth && lines.length * font.heightAtSize(size) + 3 <= fieldHeight) {
+            break;
           }
         }
+        size = Math.max(size, minShrink);
+        const multiline = lines.length > 1;
 
         const shrinkField = pdf.getForm().createTextField(`text.${field.secondaryId}`);
         const align =
