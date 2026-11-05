@@ -111,6 +111,18 @@ export const sendDocument = async ({ id, userId, teamId, sendEmail, requestMetad
     throw new Error('Document has no recipients');
   }
 
+  // KRE8ivU: required recipient info is validated only at Send time.
+  const missingEmail = envelope.recipients.filter((r) => !r.email || !r.email.trim());
+
+  if (missingEmail.length > 0) {
+    throw new AppError(AppErrorCode.INVALID_REQUEST, {
+      message: `Fill in the email for every recipient before sending (missing: ${missingEmail
+        .map((r) => r.name || `signer ${r.signingOrder ?? ''}`.trim())
+        .join(', ')})`,
+      statusCode: 400,
+    });
+  }
+
   // A recipientCount of 0 means unlimited recipients are allowed.
   const maximumRecipientCount = envelope.team.organisation.organisationClaim.recipientCount;
 
