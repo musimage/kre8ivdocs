@@ -1,4 +1,5 @@
 import { PDF_VIEWER_PAGE_SELECTOR } from '@documenso/lib/constants/pdf-viewer';
+import type { TFieldMetaSchema } from '@documenso/lib/types/field-meta';
 import { trpc } from '@documenso/trpc/react';
 import { FieldRootContainer } from '@documenso/ui/components/field/field';
 import { cn } from '@documenso/ui/lib/utils';
@@ -10,8 +11,8 @@ import { FieldType } from '@prisma/client';
 import { CheckIcon } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-type FillableField = Field & {
-  fieldMeta: Record<string, unknown> | null;
+type LocalField = Omit<Field, 'fieldMeta'> & {
+  fieldMeta: TFieldMetaSchema | null;
 };
 
 export type DocumentDraftFillFieldsProps = {
@@ -22,20 +23,28 @@ export type DocumentDraftFillFieldsProps = {
 
 const FILLABLE = new Set<FieldType>([FieldType.TEXT, FieldType.CHECKBOX]);
 
-const isChecked = (field: FillableField): boolean => {
-  const meta = field.fieldMeta as { values?: { checked?: boolean }[] } | null;
-  return Boolean(meta?.values?.[0]?.checked);
+const toLocal = (fields: Field[]): LocalField[] =>
+  fields.map((f) => ({
+    ...f,
+    fieldMeta: (f.fieldMeta as TFieldMetaSchema | null) ?? null,
+  }));
+
+const isChecked = (field: LocalField): boolean => {
+  const meta = field.fieldMeta;
+  if (!meta || meta.type !== 'checkbox') return false;
+  return Boolean(meta.values?.[0]?.checked);
 };
 
-const textValue = (field: FillableField): string => {
-  const meta = field.fieldMeta as { text?: string; label?: string; type?: string } | null;
-  if (meta?.type === 'text' && typeof meta.text === 'string') return meta.text;
-  return '';
+const textValue = (field: LocalField): string => {
+  const meta = field.fieldMeta;
+  if (!meta || meta.type !== 'text') return '';
+  return meta.text ?? '';
 };
 
-const textLabel = (field: FillableField): string => {
-  const meta = field.fieldMeta as { label?: string } | null;
-  return meta?.label || 'Text';
+const textLabel = (field: LocalField): string => {
+  const meta = field.fieldMeta;
+  if (meta && 'label' in meta && meta.label) return meta.label;
+  return 'Text';
 };
 
 /**
@@ -51,17 +60,14 @@ export const DocumentDraftFillFields = ({
   const utils = trpc.useUtils();
   const { mutateAsync: updateFields } = trpc.envelope.field.updateMany.useMutation();
 
-  const [fields, setFields] = useState<FillableField[]>(
-    () => initialFields.map((f) => ({ ...f, fieldMeta: (f.fieldMeta as Record<string, unknown>) ?? null })),
-  );
+  const [fields, setFields] = useState<LocalField[]>(() => toLocal(initialFields));
   const [editingId, setEditingId] = useState<number | null>(null);
   const [draftText, setDraftText] = useState('');
   const [savingId, setSavingId] = useState<number | null>(null);
   const inputRef = useRef<HTMLInputElement | HTMLTextAreaElement | null>(null);
+
   useEffect(() => {
-    setFields(
-      initialFields.map((f) => ({ ...f, fieldMeta: (f.fieldMeta as Record<string, unknown>) ?? null })),
-    );
+    setFields(toLocal(initialFields));
   }, [initialFields]);
 
   useEffect(() => {
@@ -72,7 +78,7 @@ export const DocumentDraftFillFields = ({
   }, [editingId]);
 
   const persist = useCallback(
-    async (field: FillableField, nextMeta: Record<string, unknown>) => {
+    async (field: LocalField, nextMeta: TFieldMetaSchema) => {
       setSavingId(field.id);
       try {
         await updateFields({
@@ -82,12 +88,10 @@ export const DocumentDraftFillFields = ({
               id: field.id,
               type: field.type,
               fieldMeta: nextMeta,
-            },
+            } as Parameters<typeof updateFields>[0]['data'][number],
           ],
         });
-        setFields((prev) =>
-          prev.map((f) => (f.id === field.id ? { ...f, fieldMeta: nextMeta } : f)),
-        );
+        setFields((prev) => prev.map((f) => (f.id === field.id ? { ...f, fieldMeta: nextMeta } : f)));
         void utils.envelope.get.invalidate({ envelopeId });
       } catch (err) {
         console.error(err);
@@ -104,14 +108,17 @@ export const DocumentDraftFillFields = ({
   );
 
   const saveText = useCallback(
-    async (field: FillableField, value: string) => {
-      const meta = { ...(field.fieldMeta ?? {}) };
+    async (field: LocalField, value: string) => {
+      const prev = (field.fieldMeta && field.fieldMeta.type === 'text' ? field.fieldMeta : {}) as Record<
+        string,
+        unknown
+      >;
       const next = {
-        ...meta,
-        type: 'text',
+        ...prev,
+        type: 'text' as const,
         text: value,
         readOnly: true,
-      };
+      } satisfies TFieldMetaSchema;
       setEditingId(null);
       await persist(field, next);
     },
@@ -119,31 +126,31 @@ export const DocumentDraftFillFields = ({
   );
 
   const toggleCheckbox = useCallback(
-    async (field: FillableField) => {
-      const meta = (field.fieldMeta ?? {}) as {
-        values?: { id: number; value: string; checked: boolean }[];
-        direction?: string;
-      };
-      const values = meta.values?.length
-        ? meta.values
-        : [{ id: 1, value: '', checked: false }];
+    async (field: LocalField) => {
+      const prev =
+        field.fieldMeta && field.fieldMeta.type === 'checkbox'
+          ? field.fieldMeta
+          : { type: 'checkbox' as const, values: [{ id: 1, value: '', checked: false }], direction: 'vertical' as const };
+
+      const values = prev.values?.length ? prev.values : [{ id: 1, value: '', checked: false }];
       const nextChecked = !Boolean(values[0]?.checked);
       const next = {
-        ...meta,
-        type: 'checkbox',
+        ...prev,
+        type: 'checkbox' as const,
+        direction: prev.direction ?? ('vertical' as const),
         values: values.map((x, i) => (i === 0 ? { ...x, checked: nextChecked } : x)),
         readOnly: true,
-      };
-      // Optimistic
-      setFields((prev) =>
-        prev.map((f) => (f.id === field.id ? { ...f, fieldMeta: next } : f)),
+      } satisfies TFieldMetaSchema;
+
+      setFields((prevFields) =>
+        prevFields.map((f) => (f.id === field.id ? { ...f, fieldMeta: next } : f)),
       );
       await persist(field, next);
     },
     [persist],
   );
 
-  const startEditText = (field: FillableField) => {
+  const startEditText = (field: LocalField) => {
     setDraftText(textValue(field));
     setEditingId(field.id);
   };
@@ -160,7 +167,7 @@ export const DocumentDraftFillFields = ({
           return (
             <FieldRootContainer
               key={field.id}
-              field={field}
+              field={field as Field}
               readonly={false}
               className="!ring-primary cursor-text bg-white"
             >
@@ -212,7 +219,7 @@ export const DocumentDraftFillFields = ({
           return (
             <FieldRootContainer
               key={field.id}
-              field={field}
+              field={field as Field}
               readonly={false}
               className={cn(
                 'cursor-pointer hover:ring-primary',
@@ -250,7 +257,7 @@ export const DocumentDraftFillFields = ({
           return (
             <FieldRootContainer
               key={field.id}
-              field={field}
+              field={field as Field}
               readonly={false}
               className={cn('cursor-text hover:ring-primary', busy && 'opacity-70')}
             >
@@ -274,9 +281,8 @@ export const DocumentDraftFillFields = ({
           );
         }
 
-        // Signature, initials, name, date, etc. stay display-only.
         return (
-          <FieldRootContainer key={field.id} field={field} readonly={true}>
+          <FieldRootContainer key={field.id} field={field as Field} readonly={true}>
             <FieldContent field={field} documentMeta={documentMeta} />
           </FieldRootContainer>
         );
