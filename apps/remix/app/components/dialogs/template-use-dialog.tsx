@@ -317,7 +317,7 @@ export function TemplateUseDialog({
             )}
           </DialogDescription>
           <p className="text-muted-foreground text-sm" data-testid="fill-in-form-hint">
-            To type in the Guardian's answers, use Fill in form.
+            After you create the draft, click any box on the PDF to type. Emails can wait until you send.
           </p>
         </DialogHeader>
 
@@ -357,7 +357,7 @@ export function TemplateUseDialog({
                       render={({ field }) => (
                         <FormItem className="w-full">
                           {index === 0 && (
-                            <FormLabel required>
+                            <FormLabel>
                               <Trans>Email</Trans>
                             </FormLabel>
                           )}

@@ -59,7 +59,7 @@ export const DocumentsTableActionButton = ({ row }: DocumentsTableActionButtonPr
   })
     .with({ isRejected: true, isCurrentTeamDocument: true }, () => (
       <Button className="w-auto px-3 md:w-32 md:px-4" asChild>
-        <Link to={`/t/${team.url}/intake/${row.envelopeId}`}>
+        <Link to={`${documentsPath}/${row.envelopeId}`}>
           <Edit className="mr-2 -ml-1 h-4 w-4" />
           Fix and resend
         </Link>
@@ -67,9 +67,9 @@ export const DocumentsTableActionButton = ({ row }: DocumentsTableActionButtonPr
     ))
     .with(isOwner ? { isDraft: true, isOwner: true } : { isDraft: true, isCurrentTeamDocument: true }, () => (
       <Button className="w-auto px-3 md:w-32 md:px-4" asChild>
-        <Link to={`/t/${team.url}/intake/${row.envelopeId}`}>
+        <Link to={`${documentsPath}/${row.envelopeId}`}>
           <Edit className="mr-2 -ml-1 h-4 w-4" />
-          Fill in form
+          Open
         </Link>
       </Button>
     ))

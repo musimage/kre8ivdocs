@@ -397,7 +397,7 @@ function IntakeFormPage({ params }: Route.ComponentProps) {
           loading={isDuplicating}
           onClick={async () => {
             const { id } = await duplicateEnvelope({ envelopeId: envelope.id });
-            await navigate(`/t/${team.url}/intake/${id}`);
+            await navigate(`/t/${team.url}/documents/${id}`);
           }}
         >
           Fix it

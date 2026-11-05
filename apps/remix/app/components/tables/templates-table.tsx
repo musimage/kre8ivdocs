@@ -30,7 +30,6 @@ import { Trans } from "@lingui/react/macro";
 import {
   AlertTriangle,
   Building2Icon,
-  ClipboardListIcon,
   Globe2Icon,
   InfoIcon,
   Link2Icon,
@@ -266,14 +265,14 @@ export const TemplatesTable = ({
 
                 <Button
                   asChild
-                  variant="outline"
-                  className="bg-background px-3 md:px-4"
+                  variant="ghost"
+                  className="px-2 text-muted-foreground md:px-3"
                 >
                   <Link
                     to={`/t/${team?.url}/intake/${row.original.envelopeId}`}
+                    title="Optional list view"
                   >
-                    <ClipboardListIcon className="mr-2 -ml-1 h-4 w-4" />
-                    Fill in form
+                    List view
                   </Link>
                 </Button>
               </div>

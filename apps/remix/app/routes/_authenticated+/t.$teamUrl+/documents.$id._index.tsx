@@ -10,6 +10,8 @@ import {
   DocumentReadOnlyFields,
   mapFieldsWithRecipients,
 } from '@documenso/ui/components/document/document-read-only-fields';
+import { DocumentDraftFillFields } from '~/components/general/document/document-draft-fill-fields';
+import { DocumentRejectedFixButton } from '~/components/general/document/document-rejected-fix-button';
 import { cn } from '@documenso/ui/lib/utils';
 import { Badge } from '@documenso/ui/primitives/badge';
 import { Button } from '@documenso/ui/primitives/button';
@@ -183,25 +185,33 @@ export default function DocumentPage({ params }: Route.ComponentProps) {
         ) : (
           <Card className="relative col-span-12 rounded-xl before:rounded-xl lg:col-span-6 xl:col-span-7" gradient>
             <CardContent className="p-2">
-              {envelope.status !== DocumentStatus.COMPLETED && (
-                <DocumentReadOnlyFields
-                  fields={mapFieldsWithRecipients(envelope.fields, envelope.recipients).map((field) => {
-                    const sig = fieldSignatures?.find((s) => s.fieldId === field.id);
-                    return sig
-                      ? {
-                          ...field,
-                          signature: {
-                            signatureImageAsBase64: sig.signatureImageAsBase64,
-                            typedSignature: sig.typedSignature,
-                          } as never,
-                        }
-                      : field;
-                  })}
+              {envelope.status === DocumentStatus.DRAFT ? (
+                <DocumentDraftFillFields
+                  envelopeId={envelope.id}
+                  fields={envelope.fields}
                   documentMeta={envelope.documentMeta || undefined}
-                  showRecipientTooltip={true}
-                  showRecipientColors={true}
-                  recipientIds={envelope.recipients.map((recipient) => recipient.id)}
                 />
+              ) : (
+                envelope.status !== DocumentStatus.COMPLETED && (
+                  <DocumentReadOnlyFields
+                    fields={mapFieldsWithRecipients(envelope.fields, envelope.recipients).map((field) => {
+                      const sig = fieldSignatures?.find((s) => s.fieldId === field.id);
+                      return sig
+                        ? {
+                            ...field,
+                            signature: {
+                              signatureImageAsBase64: sig.signatureImageAsBase64,
+                              typedSignature: sig.typedSignature,
+                            } as never,
+                          }
+                        : field;
+                    })}
+                    documentMeta={envelope.documentMeta || undefined}
+                    showRecipientTooltip={true}
+                    showRecipientColors={true}
+                    recipientIds={envelope.recipients.map((recipient) => recipient.id)}
+                  />
+                )
               )}
 
               <PDFViewerLazy
@@ -237,7 +247,9 @@ export default function DocumentPage({ params }: Route.ComponentProps) {
                   .with(DocumentStatus.REJECTED, () => <Trans>This document has been rejected by a recipient</Trans>)
                   .with(DocumentStatus.CANCELLED, () => <Trans>This document has been cancelled</Trans>)
                   .with(DocumentStatus.DRAFT, () => (
-                    <Trans>This document is currently a draft and has not been sent</Trans>
+                    <>
+                      Click a box on the PDF to type. Checkboxes toggle. Signatures wait for parents.
+                    </>
                   ))
                   .with(DocumentStatus.PENDING, () => {
                     const pendingRecipients = envelope.recipients.filter(
@@ -256,7 +268,11 @@ export default function DocumentPage({ params }: Route.ComponentProps) {
               </p>
 
               <div className="mt-4 border-t px-4 pt-4">
-                <DocumentPageViewButton envelope={envelope} />
+                {envelope.status === DocumentStatus.REJECTED ? (
+                  <DocumentRejectedFixButton envelope={envelope} />
+                ) : (
+                  <DocumentPageViewButton envelope={envelope} />
+                )}
               </div>
             </section>
 
