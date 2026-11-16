@@ -1,10 +1,22 @@
 import { msg } from '@lingui/core/macro';
 
-export const TEMPLATE_RECIPIENT_EMAIL_PLACEHOLDER_REGEX = /recipient\.\d+@documenso\.com/i;
+/**
+ * Official Documenso placeholders plus KRE8ivU template placeholders.
+ * The Use dialog clears emails that match this so staff can type real addresses.
+ */
+export const TEMPLATE_RECIPIENT_EMAIL_PLACEHOLDER_REGEX =
+  /^(?:recipient\.\d+@documenso\.com|[^@\s]+@placeholder\.kre8ivu\.org)$/i;
 export const TEMPLATE_RECIPIENT_NAME_PLACEHOLDER_REGEX = /Recipient \d+/i;
 
 export const isTemplateRecipientEmailPlaceholder = (email: string) => {
-  return TEMPLATE_RECIPIENT_EMAIL_PLACEHOLDER_REGEX.test(email);
+  return TEMPLATE_RECIPIENT_EMAIL_PLACEHOLDER_REGEX.test(email.trim());
+};
+
+/** True when an email is blank or a template placeholder (not sendable). */
+export const isRecipientEmailMissing = (email: string | null | undefined) => {
+  const value = email?.trim() ?? '';
+
+  return value === '' || isTemplateRecipientEmailPlaceholder(value);
 };
 
 export const DIRECT_TEMPLATE_DOCUMENTATION = [

@@ -18,9 +18,15 @@ export const FAIR_USE_LIMIT_EXCEEDED_ERROR_MESSAGE = {
   description: msg`Your organisation has reached its plan's fair use limit. Please contact your organisation administrator or support to continue.`,
 };
 
+export const MISSING_RECIPIENT_EMAIL_ERROR_MESSAGE = {
+  title: msg`Add recipient emails`,
+  description: msg`Fill in a real email for every recipient before sending. Placeholder or blank emails cannot be sent.`,
+};
+
 export const getDistributeErrorMessage = (code: string): ToastMessageDescriptor => {
   return match(code)
     .with('RECIPIENT_LIMIT_EXCEEDED', () => RECIPIENT_LIMIT_EXCEEDED_ERROR_MESSAGE)
+    .with('MISSING_RECIPIENT_EMAIL', () => MISSING_RECIPIENT_EMAIL_ERROR_MESSAGE)
     .with(AppErrorCode.TOO_MANY_REQUESTS, () => FAIR_USE_LIMIT_EXCEEDED_ERROR_MESSAGE)
     .otherwise(() => ({
       title: msg`Something went wrong`,

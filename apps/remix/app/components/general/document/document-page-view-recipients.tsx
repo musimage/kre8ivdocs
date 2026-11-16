@@ -30,6 +30,8 @@ import { useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router';
 import { match } from 'ts-pattern';
 
+import { DraftRecipientEmails } from '@documenso/ui/components/document/draft-recipient-emails';
+
 export type DocumentPageViewRecipientsProps = {
   envelope: TEnvelope;
   documentRootPath: string;
@@ -75,6 +77,24 @@ export const DocumentPageViewRecipients = ({ envelope, documentRootPath }: Docum
         )}
       </div>
 
+      {envelope.status === DocumentStatus.DRAFT ? (
+        <div className="border-t px-4 py-3">
+          {recipients.length === 0 ? (
+            <p className="text-muted-foreground text-sm">
+              <Trans>No recipients</Trans>
+            </p>
+          ) : (
+            <DraftRecipientEmails
+              envelopeId={envelope.id}
+              recipients={recipients.map((recipient) => ({
+                id: recipient.id,
+                name: recipient.name,
+                email: recipient.email,
+              }))}
+            />
+          )}
+        </div>
+      ) : (
       <ul className="divide-y border-t text-muted-foreground">
         {recipients.length === 0 && (
           <li className="flex flex-col items-center justify-center py-6 text-sm">
@@ -225,6 +245,7 @@ export const DocumentPageViewRecipients = ({ envelope, documentRootPath }: Docum
           </li>
         ))}
       </ul>
+      )}
     </section>
   );
 };

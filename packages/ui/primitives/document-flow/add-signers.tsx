@@ -4,6 +4,7 @@ import { useDebouncedValue } from '@documenso/lib/client-only/hooks/use-debounce
 import { useCurrentOrganisation } from '@documenso/lib/client-only/providers/organisation';
 import { useSession } from '@documenso/lib/client-only/providers/session';
 import { ZRecipientAuthOptionsSchema } from '@documenso/lib/types/document-auth';
+import { isTemplateRecipientEmailPlaceholder } from '@documenso/lib/constants/template';
 import type { TRecipientLite } from '@documenso/lib/types/recipient';
 import { nanoid } from '@documenso/lib/universal/id';
 import {
@@ -766,7 +767,7 @@ export const AddSignersFormPartial = ({
                                       <RecipientAutoCompleteInput
                                         type="email"
                                         placeholder={_(msg`Email`)}
-                                        value={field.value}
+                                        value={isTemplateRecipientEmailPlaceholder(field.value) ? '' : field.value}
                                         disabled={
                                           snapshot.isDragging ||
                                           isSubmitting ||

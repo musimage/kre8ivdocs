@@ -6,6 +6,7 @@ import { ZDocumentEmailSettingsSchema } from '@documenso/lib/types/document-emai
 import type { TRecipientLite } from '@documenso/lib/types/recipient';
 import { formatSigningLink } from '@documenso/lib/utils/recipients';
 import { trpc } from '@documenso/trpc/react';
+import { DraftRecipientEmails, type DraftRecipientEmailsHandle } from '@documenso/ui/components/document/draft-recipient-emails';
 import { DocumentSendEmailMessageHelper } from '@documenso/ui/components/document/document-send-email-message-helper';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@documenso/ui/primitives/form/form';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@documenso/ui/primitives/select';
@@ -18,7 +19,7 @@ import type { Field } from '@prisma/client';
 import { DocumentDistributionMethod, DocumentStatus, RecipientRole } from '@prisma/client';
 import { AnimatePresence, motion } from 'framer-motion';
 import { InfoIcon } from 'lucide-react';
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 
 import { CopyTextButton } from '../../components/common/copy-text-button';
@@ -93,6 +94,7 @@ export const AddSubjectFormPartial = ({
   });
 
   const emails = emailData?.data || [];
+  const draftEmailsRef = useRef<DraftRecipientEmailsHandle>(null);
 
   const GoNextLabel = {
     [DocumentDistributionMethod.EMAIL]: {
@@ -116,7 +118,22 @@ export const AddSubjectFormPartial = ({
   const distributionMethod = watch('meta.distributionMethod');
   const emailSettings = watch('meta.emailSettings');
 
-  const onFormSubmit = handleSubmit(onSubmit);
+  const onFormSubmit = handleSubmit(async (data) => {
+    if (document.status === DocumentStatus.DRAFT && draftEmailsRef.current) {
+      const result = await draftEmailsRef.current.saveAndAssertReadyToSend();
+
+      if (!result.ok) {
+        toast({
+          title: 'Add recipient emails',
+          description: `Fill in a real email for every recipient before sending (missing: ${result.missingNames.join(', ')}). Placeholder or blank emails cannot be sent.`,
+          variant: 'destructive',
+        });
+        return;
+      }
+    }
+
+    onSubmit(data);
+  });
   const { currentStep, totalSteps, previousStep } = useStep();
 
   const { scheduleSave } = useAutoSave(onAutoSave);
@@ -159,6 +176,21 @@ export const AddSubjectFormPartial = ({
               recipientIds={recipients.map((recipient) => recipient.id)}
               fields={mapFieldsWithRecipients(fields, recipients)}
             />
+          )}
+
+          {document.status === DocumentStatus.DRAFT && (
+            <div className="mb-4 rounded-lg border p-4">
+              <DraftRecipientEmails
+                ref={draftEmailsRef}
+                envelopeId={document.envelopeId}
+                recipients={recipients.map((recipient) => ({
+                  id: recipient.id,
+                  name: recipient.name,
+                  email: recipient.email,
+                }))}
+                disabled={isSubmitting}
+              />
+            </div>
           )}
 
           <Tabs

@@ -395,7 +395,10 @@ export const DocumentEditForm = ({ className, initialDocument, documentRootPath 
 
       toast({
         title: _(errorMessage.title),
-        description: _(errorMessage.description),
+        description:
+          error.code === 'MISSING_RECIPIENT_EMAIL' && error.message
+            ? error.message
+            : _(errorMessage.description),
         variant: 'destructive',
       });
     }

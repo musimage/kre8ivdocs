@@ -8,6 +8,7 @@ import { hasOverlappingFields } from '@documenso/lib/utils/fields-overlap';
 import { getRecipientsWithMissingFields } from '@documenso/lib/utils/recipients';
 import { zEmail } from '@documenso/lib/utils/zod';
 import { trpc, trpc as trpcReact } from '@documenso/trpc/react';
+import { DraftRecipientEmails, type DraftRecipientEmailsHandle } from '@documenso/ui/components/document/draft-recipient-emails';
 import { DocumentSendEmailMessageHelper } from '@documenso/ui/components/document/document-send-email-message-helper';
 import { cn } from '@documenso/ui/lib/utils';
 import { Alert, AlertDescription, AlertTitle } from '@documenso/ui/primitives/alert';
@@ -35,7 +36,7 @@ import { Trans, useLingui } from '@lingui/react/macro';
 import { DocumentDistributionMethod, DocumentStatus, EnvelopeType } from '@prisma/client';
 import { AnimatePresence, motion } from 'framer-motion';
 import { AlertTriangleIcon, InfoIcon } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useNavigate } from 'react-router';
 import { match } from 'ts-pattern';
@@ -76,6 +77,7 @@ export const EnvelopeDistributeDialog = ({
 
   const [isOpen, setIsOpen] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
+  const draftEmailsRef = useRef<DraftRecipientEmailsHandle>(null);
 
   const { mutateAsync: distributeEnvelope } = trpcReact.envelope.distribute.useMutation();
 
@@ -180,6 +182,22 @@ export const EnvelopeDistributeDialog = ({
 
   const onFormSubmit = async ({ meta }: TEnvelopeDistributeFormSchema) => {
     try {
+      if (draftEmailsRef.current) {
+        const result = await draftEmailsRef.current.saveAndAssertReadyToSend();
+
+        if (!result.ok) {
+          toast({
+            title: t`Add recipient emails`,
+            description: `Fill in a real email for every recipient before sending (missing: ${result.missingNames.join(', ')}). Placeholder or blank emails cannot be sent.`,
+            variant: 'destructive',
+            duration: 7500,
+          });
+          return;
+        }
+
+        await syncEnvelope();
+      }
+
       await distributeEnvelope({ envelopeId: envelope.id, meta });
 
       await onDistribute?.();
@@ -212,7 +230,10 @@ export const EnvelopeDistributeDialog = ({
 
       toast({
         title: i18n._(errorMessage.title),
-        description: i18n._(errorMessage.description),
+        description:
+          error.code === 'MISSING_RECIPIENT_EMAIL' && error.message
+            ? error.message
+            : i18n._(errorMessage.description),
         variant: 'destructive',
         duration: 7500,
       });
@@ -270,6 +291,22 @@ export const EnvelopeDistributeDialog = ({
           <Form {...form}>
             <form onSubmit={handleSubmit(onFormSubmit)}>
               <fieldset disabled={isSubmitting}>
+                <div className="mb-4 rounded-lg border p-4">
+                  <DraftRecipientEmails
+                    ref={draftEmailsRef}
+                    envelopeId={envelope.id}
+                    recipients={envelope.recipients.map((recipient) => ({
+                      id: recipient.id,
+                      name: recipient.name,
+                      email: recipient.email,
+                    }))}
+                    disabled={isSubmitting || isSyncing}
+                    onSaved={() => {
+                      void syncEnvelope();
+                    }}
+                  />
+                </div>
+
                 {hasOverlappingEnvelopeFields && (
                   <Alert variant="warning" className="mb-4 flex flex-row items-start gap-3">
                     <AlertTriangleIcon className="mt-0.5 h-5 w-5 flex-shrink-0" />

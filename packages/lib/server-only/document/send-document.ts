@@ -19,6 +19,7 @@ import {
 
 import { validateCheckboxLength } from '../../advanced-fields-validation/validate-checkbox';
 import { DIRECT_TEMPLATE_RECIPIENT_EMAIL } from '../../constants/direct-templates';
+import { isRecipientEmailMissing } from '../../constants/template';
 import { AppError, AppErrorCode } from '../../errors/app-error';
 import { jobs } from '../../jobs/client';
 import { extractDerivedDocumentEmailSettings } from '../../types/document-email';
@@ -112,13 +113,15 @@ export const sendDocument = async ({ id, userId, teamId, sendEmail, requestMetad
   }
 
   // KRE8ivU: required recipient info is validated only at Send time.
-  const missingEmail = envelope.recipients.filter((r) => !r.email || !r.email.trim());
+  // Placeholder addresses (recipient.N@documenso.com or *@placeholder.kre8ivu.org)
+  // count as missing so a document cannot be sent to a template placeholder.
+  const missingEmail = envelope.recipients.filter((r) => isRecipientEmailMissing(r.email));
 
   if (missingEmail.length > 0) {
-    throw new AppError(AppErrorCode.INVALID_REQUEST, {
-      message: `Fill in the email for every recipient before sending (missing: ${missingEmail
+    throw new AppError('MISSING_RECIPIENT_EMAIL', {
+      message: `Fill in a real email for every recipient before sending (missing: ${missingEmail
         .map((r) => r.name || `signer ${r.signingOrder ?? ''}`.trim())
-        .join(', ')})`,
+        .join(', ')}). Placeholder or blank emails cannot be sent.`,
       statusCode: 400,
     });
   }
