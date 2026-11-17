@@ -17,9 +17,7 @@ export const validateTextField = (
     errors.push(`Value length (${value.length}) exceeds the character limit (${characterLimit})`);
   }
 
-  if (readOnly && value.length < 1) {
-    errors.push('A read-only field must have text');
-  }
+  // KRE8ivDocs: staff may leave a locked (read-only) text box blank; do not block saving.
 
   if (readOnly && required) {
     errors.push('A field cannot be both read-only and required');
