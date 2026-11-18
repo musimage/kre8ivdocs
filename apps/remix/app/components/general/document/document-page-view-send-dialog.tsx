@@ -17,6 +17,7 @@ import {
   DialogTrigger,
 } from '@documenso/ui/primitives/dialog';
 import { useToast } from '@documenso/ui/primitives/use-toast';
+import { useLingui } from '@lingui/react';
 import { Trans } from '@lingui/react/macro';
 import { DocumentDistributionMethod, DocumentStatus } from '@prisma/client';
 import { useRef, useState } from 'react';
@@ -30,6 +31,7 @@ export type DocumentPageViewSendDialogProps = {
 
 export const DocumentPageViewSendDialog = ({ envelope }: DocumentPageViewSendDialogProps) => {
   const { toast } = useToast();
+  const { _ } = useLingui();
   const navigate = useNavigate();
   const draftEmailsRef = useRef<DraftRecipientEmailsHandle>(null);
   const [open, setOpen] = useState(false);
@@ -77,11 +79,12 @@ export const DocumentPageViewSendDialog = ({ envelope }: DocumentPageViewSendDia
       await navigate(`${documentRootPath}/${envelope.id}`);
     } catch (err) {
       const error = AppError.parseError(err);
-      const message = getDistributeErrorMessage(error);
+      const errorMessage = getDistributeErrorMessage(error.code);
 
       toast({
-        title: 'Could not send',
-        description: message,
+        title: _(errorMessage.title),
+        description:
+          error.code === 'MISSING_RECIPIENT_EMAIL' && error.message ? error.message : _(errorMessage.description),
         variant: 'destructive',
         duration: 7500,
       });
