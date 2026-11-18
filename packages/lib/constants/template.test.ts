@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  isOptionalSendRecipient,
   isRecipientEmailMissing,
+  isRecipientEmailRequiredForSend,
   isTemplateRecipientEmailPlaceholder,
 } from './template';
 
@@ -40,5 +42,27 @@ describe('isRecipientEmailMissing', () => {
   it('treats real emails as present', () => {
     expect(isRecipientEmailMissing('parent@gmail.com')).toBe(false);
     expect(isRecipientEmailMissing('tysha@kre8ivu.org')).toBe(false);
+  });
+});
+
+describe('isOptionalSendRecipient', () => {
+  it('matches the Student recipient name only', () => {
+    expect(isOptionalSendRecipient('Student')).toBe(true);
+    expect(isOptionalSendRecipient('student')).toBe(true);
+    expect(isOptionalSendRecipient('  Student  ')).toBe(true);
+    expect(isOptionalSendRecipient('Guardian')).toBe(false);
+    expect(isOptionalSendRecipient('KRE8ivU Staff')).toBe(false);
+    expect(isOptionalSendRecipient('Executive Director')).toBe(false);
+    expect(isOptionalSendRecipient('')).toBe(false);
+    expect(isOptionalSendRecipient(null)).toBe(false);
+  });
+});
+
+describe('isRecipientEmailRequiredForSend', () => {
+  it('requires guardian, staff and ED emails, but not the student', () => {
+    expect(isRecipientEmailRequiredForSend('Guardian')).toBe(true);
+    expect(isRecipientEmailRequiredForSend('KRE8ivU Staff')).toBe(true);
+    expect(isRecipientEmailRequiredForSend('Executive Director')).toBe(true);
+    expect(isRecipientEmailRequiredForSend('Student')).toBe(false);
   });
 });

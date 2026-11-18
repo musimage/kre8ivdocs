@@ -19,6 +19,18 @@ export const isRecipientEmailMissing = (email: string | null | undefined) => {
   return value === '' || isTemplateRecipientEmailPlaceholder(value);
 };
 
+/** Guardian-form drafts use the recipient name "Student". A blank student email is allowed. */
+export const OPTIONAL_SEND_RECIPIENT_NAME_REGEX = /^student$/i;
+
+export const isOptionalSendRecipient = (name: string | null | undefined) => {
+  return OPTIONAL_SEND_RECIPIENT_NAME_REGEX.test((name ?? '').trim());
+};
+
+/** True when this recipient must have a real email before Send. */
+export const isRecipientEmailRequiredForSend = (name: string | null | undefined) => {
+  return !isOptionalSendRecipient(name);
+};
+
 export const DIRECT_TEMPLATE_DOCUMENTATION = [
   {
     title: msg`Enable Direct Link Signing`,

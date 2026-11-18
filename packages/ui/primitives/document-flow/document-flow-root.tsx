@@ -78,7 +78,10 @@ export const DocumentFlowFormContainerFooter = ({
   ...props
 }: DocumentFlowFormContainerFooterProps) => {
   return (
-    <div className={cn('mt-4 flex-shrink-0', className)} {...props}>
+    <div
+      className={cn('sticky bottom-0 z-10 mt-4 flex-shrink-0 bg-widget pt-2 dark:bg-background', className)}
+      {...props}
+    >
       {children}
     </div>
   );

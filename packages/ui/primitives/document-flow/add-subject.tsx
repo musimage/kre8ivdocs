@@ -6,8 +6,11 @@ import { ZDocumentEmailSettingsSchema } from '@documenso/lib/types/document-emai
 import type { TRecipientLite } from '@documenso/lib/types/recipient';
 import { formatSigningLink } from '@documenso/lib/utils/recipients';
 import { trpc } from '@documenso/trpc/react';
-import { DraftRecipientEmails, type DraftRecipientEmailsHandle } from '@documenso/ui/components/document/draft-recipient-emails';
 import { DocumentSendEmailMessageHelper } from '@documenso/ui/components/document/document-send-email-message-helper';
+import {
+  DraftRecipientEmails,
+  type DraftRecipientEmailsHandle,
+} from '@documenso/ui/components/document/draft-recipient-emails';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@documenso/ui/primitives/form/form';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@documenso/ui/primitives/select';
 import { Tabs, TabsList, TabsTrigger } from '@documenso/ui/primitives/tabs';
@@ -125,7 +128,7 @@ export const AddSubjectFormPartial = ({
       if (!result.ok) {
         toast({
           title: 'Add recipient emails',
-          description: `Fill in a real email for every recipient before sending (missing: ${result.missingNames.join(', ')}). Placeholder or blank emails cannot be sent.`,
+          description: `Fill in a real email for every required recipient before sending (missing: ${result.missingNames.join(', ')}). Placeholder or blank emails cannot be sent.`,
           variant: 'destructive',
         });
         return;

@@ -1,4 +1,5 @@
 import {
+  isOptionalSendRecipient,
   isRecipientEmailMissing,
   isTemplateRecipientEmailPlaceholder,
 } from '@documenso/lib/constants/template';
@@ -148,6 +149,11 @@ export const DraftRecipientEmails = forwardRef<DraftRecipientEmailsHandle, Draft
         for (const recipient of recipients) {
           const value = (values[recipient.id] ?? '').trim();
           const error = validateOne(recipient.id, value);
+          const optional = isOptionalSendRecipient(recipient.name);
+
+          if (optional && isRecipientEmailMissing(value) && !error) {
+            continue;
+          }
 
           if (error) {
             nextErrors[recipient.id] = error;
@@ -183,7 +189,10 @@ export const DraftRecipientEmails = forwardRef<DraftRecipientEmailsHandle, Draft
       <div className={cn('flex flex-col gap-3', className)}>
         {showHint && (
           <p className="text-muted-foreground text-sm">
-            <Trans>Type a real email for each person. You can do this now or when you send.</Trans>
+            <Trans>
+              Type a real email for the guardian, staff, and director. The student email is optional and can be left
+              blank.
+            </Trans>
           </p>
         )}
 
@@ -192,7 +201,10 @@ export const DraftRecipientEmails = forwardRef<DraftRecipientEmailsHandle, Draft
 
           return (
             <label key={recipient.id} className="flex flex-col gap-1">
-              <span className="text-sm font-medium text-foreground">{recipient.name || 'Recipient'}</span>
+              <span className="font-medium text-foreground text-sm">
+                {recipient.name || 'Recipient'}
+                {isOptionalSendRecipient(recipient.name) ? ' (optional)' : ''}
+              </span>
               <Input
                 type="email"
                 inputMode="email"

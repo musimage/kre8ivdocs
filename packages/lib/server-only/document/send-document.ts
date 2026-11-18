@@ -19,7 +19,7 @@ import {
 
 import { validateCheckboxLength } from '../../advanced-fields-validation/validate-checkbox';
 import { DIRECT_TEMPLATE_RECIPIENT_EMAIL } from '../../constants/direct-templates';
-import { isRecipientEmailMissing } from '../../constants/template';
+import { isOptionalSendRecipient, isRecipientEmailMissing } from '../../constants/template';
 import { AppError, AppErrorCode } from '../../errors/app-error';
 import { jobs } from '../../jobs/client';
 import { extractDerivedDocumentEmailSettings } from '../../types/document-email';
@@ -112,14 +112,58 @@ export const sendDocument = async ({ id, userId, teamId, sendEmail, requestMetad
     throw new Error('Document has no recipients');
   }
 
+  // KRE8ivU: a Student recipient with no real email is optional. Drop them and
+  // their fields on a first send so staff can send when only the guardian has an email.
+  if (envelope.status === DocumentStatus.DRAFT) {
+    const optionalRecipientsToDrop = envelope.recipients.filter(
+      (recipient) => isOptionalSendRecipient(recipient.name) && isRecipientEmailMissing(recipient.email),
+    );
+
+    if (optionalRecipientsToDrop.length > 0) {
+      const droppedIds = new Set(optionalRecipientsToDrop.map((recipient) => recipient.id));
+
+      await prisma.$transaction(async (tx) => {
+        for (const recipient of optionalRecipientsToDrop) {
+          await tx.documentAuditLog.create({
+            data: createDocumentAuditLogData({
+              type: DOCUMENT_AUDIT_LOG_TYPE.RECIPIENT_DELETED,
+              envelopeId: envelope.id,
+              metadata: requestMetadata,
+              data: {
+                recipientEmail: recipient.email,
+                recipientName: recipient.name,
+                recipientId: recipient.id,
+                recipientRole: recipient.role,
+              },
+            }),
+          });
+
+          await tx.recipient.delete({
+            where: {
+              id: recipient.id,
+            },
+          });
+        }
+      });
+
+      envelope.recipients = envelope.recipients.filter((recipient) => !droppedIds.has(recipient.id));
+      envelope.fields = envelope.fields.filter((field) => !droppedIds.has(field.recipientId));
+    }
+  }
+
+  if (envelope.recipients.length === 0) {
+    throw new Error('Document has no recipients');
+  }
+
   // KRE8ivU: required recipient info is validated only at Send time.
   // Placeholder addresses (recipient.N@documenso.com or *@placeholder.kre8ivu.org)
   // count as missing so a document cannot be sent to a template placeholder.
+  // The Student recipient is optional and was already dropped above if blank.
   const missingEmail = envelope.recipients.filter((r) => isRecipientEmailMissing(r.email));
 
   if (missingEmail.length > 0) {
     throw new AppError('MISSING_RECIPIENT_EMAIL', {
-      message: `Fill in a real email for every recipient before sending (missing: ${missingEmail
+      message: `Fill in a real email for every required recipient before sending (missing: ${missingEmail
         .map((r) => r.name || `signer ${r.signingOrder ?? ''}`.trim())
         .join(', ')}). Placeholder or blank emails cannot be sent.`,
       statusCode: 400,

@@ -1,5 +1,6 @@
 import { DocumentSignatureType } from '@documenso/lib/constants/document';
 import { isValidLanguageCode } from '@documenso/lib/constants/i18n';
+import { isOptionalSendRecipient, isRecipientEmailMissing } from '@documenso/lib/constants/template';
 import { DO_NOT_INVALIDATE_QUERY_ON_MUTATION, SKIP_QUERY_BATCH_META } from '@documenso/lib/constants/trpc';
 import { AppError } from '@documenso/lib/errors/app-error';
 import type { TDocument } from '@documenso/lib/types/document';
@@ -209,6 +210,19 @@ export const DocumentEditForm = ({ className, initialDocument, documentRootPath 
     }
   };
 
+  const recipientsForSave = (signers: TAddSignersFormSchema['signers']) =>
+    signers.map((signer) => ({
+      ...signer,
+      id: signer.nativeId,
+      // Blank optional student emails stay as a placeholder until Send drops them.
+      email:
+        isOptionalSendRecipient(signer.name) && isRecipientEmailMissing(signer.email)
+          ? 'student@placeholder.kre8ivu.org'
+          : signer.email,
+      // Explicitly set to null to indicate we want to remove auth if required.
+      actionAuth: signer.actionAuth ?? [],
+    }));
+
   const saveSignersData = async (data: TAddSignersFormSchema) => {
     return Promise.all([
       updateDocument({
@@ -221,12 +235,7 @@ export const DocumentEditForm = ({ className, initialDocument, documentRootPath 
 
       setRecipients({
         documentId: document.id,
-        recipients: data.signers.map((signer) => ({
-          ...signer,
-          id: signer.nativeId,
-          // Explicitly set to null to indicate we want to remove auth if required.
-          actionAuth: signer.actionAuth ?? [],
-        })),
+        recipients: recipientsForSave(data.signers),
       }),
     ]);
   };
@@ -245,12 +254,7 @@ export const DocumentEditForm = ({ className, initialDocument, documentRootPath 
 
         setRecipients({
           documentId: document.id,
-          recipients: data.signers.map((signer) => ({
-            ...signer,
-            id: signer.nativeId,
-            // Explicitly set to null to indicate we want to remove auth if required.
-            actionAuth: signer.actionAuth ?? [],
-          })),
+          recipients: recipientsForSave(data.signers),
         }),
       ]);
 
@@ -396,9 +400,7 @@ export const DocumentEditForm = ({ className, initialDocument, documentRootPath 
       toast({
         title: _(errorMessage.title),
         description:
-          error.code === 'MISSING_RECIPIENT_EMAIL' && error.message
-            ? error.message
-            : _(errorMessage.description),
+          error.code === 'MISSING_RECIPIENT_EMAIL' && error.message ? error.message : _(errorMessage.description),
         variant: 'destructive',
       });
     }
@@ -432,7 +434,10 @@ export const DocumentEditForm = ({ className, initialDocument, documentRootPath 
 
   return (
     <div className={cn('grid w-full grid-cols-12 gap-8', className)}>
-      <Card className="relative col-span-12 rounded-xl before:rounded-xl lg:col-span-6 xl:col-span-7" gradient>
+      <Card
+        className="relative order-2 col-span-12 rounded-xl before:rounded-xl lg:order-1 lg:col-span-6 xl:col-span-7"
+        gradient
+      >
         <CardContent className="p-2">
           <PDFViewerLazy
             key={document.envelopeItems[0]?.id}
@@ -450,7 +455,7 @@ export const DocumentEditForm = ({ className, initialDocument, documentRootPath 
         </CardContent>
       </Card>
 
-      <div className="col-span-12 lg:col-span-6 xl:col-span-5">
+      <div className="order-1 col-span-12 lg:order-2 lg:col-span-6 xl:col-span-5">
         <DocumentFlowFormContainer className="lg:h-[calc(100vh-6rem)]" onSubmit={(e) => e.preventDefault()}>
           <Stepper
             currentStep={currentDocumentFlow.stepIndex}

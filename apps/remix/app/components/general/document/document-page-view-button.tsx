@@ -10,6 +10,7 @@ import { Link } from 'react-router';
 import { match } from 'ts-pattern';
 
 import { EnvelopeDownloadDialog } from '~/components/dialogs/envelope-download-dialog';
+import { DocumentPageViewSendDialog } from '~/components/general/document/document-page-view-send-dialog';
 
 export type DocumentPageViewButtonProps = {
   envelope: TEnvelope;
@@ -62,11 +63,14 @@ export const DocumentPageViewButton = ({ envelope }: DocumentPageViewButtonProps
       </Button>
     ))
     .with({ isComplete: false }, () => (
-      <Button className="w-full" asChild>
-        <Link to={formatPath}>
-          <Trans>Edit</Trans>
-        </Link>
-      </Button>
+      <div className="flex w-full flex-col gap-2">
+        {envelope.status === DocumentStatus.DRAFT ? <DocumentPageViewSendDialog envelope={envelope} /> : null}
+        <Button className="w-full" variant={envelope.status === DocumentStatus.DRAFT ? 'secondary' : 'default'} asChild>
+          <Link to={formatPath}>
+            <Trans>Edit</Trans>
+          </Link>
+        </Button>
+      </div>
     ))
     .with({ isComplete: true }, () => (
       <EnvelopeDownloadDialog

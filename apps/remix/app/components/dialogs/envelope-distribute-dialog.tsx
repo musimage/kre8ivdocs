@@ -8,8 +8,11 @@ import { hasOverlappingFields } from '@documenso/lib/utils/fields-overlap';
 import { getRecipientsWithMissingFields } from '@documenso/lib/utils/recipients';
 import { zEmail } from '@documenso/lib/utils/zod';
 import { trpc, trpc as trpcReact } from '@documenso/trpc/react';
-import { DraftRecipientEmails, type DraftRecipientEmailsHandle } from '@documenso/ui/components/document/draft-recipient-emails';
 import { DocumentSendEmailMessageHelper } from '@documenso/ui/components/document/document-send-email-message-helper';
+import {
+  DraftRecipientEmails,
+  type DraftRecipientEmailsHandle,
+} from '@documenso/ui/components/document/draft-recipient-emails';
 import { cn } from '@documenso/ui/lib/utils';
 import { Alert, AlertDescription, AlertTitle } from '@documenso/ui/primitives/alert';
 import { Button } from '@documenso/ui/primitives/button';
@@ -188,7 +191,7 @@ export const EnvelopeDistributeDialog = ({
         if (!result.ok) {
           toast({
             title: t`Add recipient emails`,
-            description: `Fill in a real email for every recipient before sending (missing: ${result.missingNames.join(', ')}). Placeholder or blank emails cannot be sent.`,
+            description: `Fill in a real email for every required recipient before sending (missing: ${result.missingNames.join(', ')}). Placeholder or blank emails cannot be sent.`,
             variant: 'destructive',
             duration: 7500,
           });
@@ -231,9 +234,7 @@ export const EnvelopeDistributeDialog = ({
       toast({
         title: i18n._(errorMessage.title),
         description:
-          error.code === 'MISSING_RECIPIENT_EMAIL' && error.message
-            ? error.message
-            : i18n._(errorMessage.description),
+          error.code === 'MISSING_RECIPIENT_EMAIL' && error.message ? error.message : i18n._(errorMessage.description),
         variant: 'destructive',
         duration: 7500,
       });
