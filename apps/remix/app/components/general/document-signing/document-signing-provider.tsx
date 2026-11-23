@@ -1,4 +1,5 @@
 import { isBase64Image } from '@documenso/lib/constants/signatures';
+import { getSigningFullName } from '@documenso/lib/utils/recipient-formatter';
 import { createContext, useContext, useState } from 'react';
 
 export type DocumentSigningContextValue = {
@@ -45,7 +46,7 @@ export const DocumentSigningProvider = ({
   drawSignatureEnabled = true,
   children,
 }: DocumentSigningProviderProps) => {
-  const [fullName, setFullName] = useState(initialFullName || '');
+  const [fullName, setFullName] = useState(getSigningFullName(initialFullName));
   const [email, setEmail] = useState(initialEmail || '');
 
   // Ensure the user signature doesn't show up if it's not allowed.

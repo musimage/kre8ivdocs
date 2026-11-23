@@ -6,6 +6,7 @@ import type { EnvelopeForSigningResponse } from '@documenso/lib/server-only/enve
 import type { TRecipientActionAuth } from '@documenso/lib/types/document-auth';
 import { isFieldUnsignedAndRequired, isRequiredField } from '@documenso/lib/utils/advanced-fields-helpers';
 import { extractFieldInsertionValues } from '@documenso/lib/utils/envelope-signing';
+import { getSigningFullName } from '@documenso/lib/utils/recipient-formatter';
 import { getNextDictatableRecipient } from '@documenso/lib/utils/recipient-groups';
 import { isRecipientBefore } from '@documenso/lib/utils/recipients';
 import { trpc } from '@documenso/trpc/react';
@@ -133,7 +134,7 @@ export const EnvelopeSigningProvider = ({
 
   const { envelope, recipient } = envelopeData;
 
-  const [fullName, setFullName] = useState(initialFullName || '');
+  const [fullName, setFullName] = useState(getSigningFullName(initialFullName));
   const [email, setEmail] = useState(initialEmail || '');
 
   const [showPendingFieldTooltip, setShowPendingFieldTooltip] = useState(false);

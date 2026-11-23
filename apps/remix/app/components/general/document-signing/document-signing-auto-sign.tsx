@@ -1,7 +1,7 @@
 import { unsafe_useEffectOnce } from '@documenso/lib/client-only/hooks/use-effect-once';
 import { AUTO_SIGNABLE_FIELD_TYPES } from '@documenso/lib/constants/autosign';
 import { DocumentAuth } from '@documenso/lib/types/document-auth';
-import { extractInitials } from '@documenso/lib/utils/recipient-formatter';
+import { extractInitials, isGenericRecipientName } from '@documenso/lib/utils/recipient-formatter';
 import { trpc } from '@documenso/trpc/react';
 import { Button } from '@documenso/ui/primitives/button';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@documenso/ui/primitives/dialog';
@@ -68,11 +68,11 @@ export const DocumentSigningAutoSign = ({ recipient, fields }: DocumentSigningAu
       return false;
     }
 
-    if (field.type === FieldType.NAME && !fullName) {
+    if (field.type === FieldType.NAME && (!fullName || isGenericRecipientName(fullName))) {
       return false;
     }
 
-    if (field.type === FieldType.INITIALS && !fullName) {
+    if (field.type === FieldType.INITIALS && (!fullName || isGenericRecipientName(fullName))) {
       return false;
     }
 
@@ -207,7 +207,7 @@ export const DocumentSigningAutoSign = ({ recipient, fields }: DocumentSigningAu
                 loading={form.formState.isSubmitting}
                 disabled={!autoSignableFields.length}
               >
-                <Trans>Sign</Trans>
+                <Trans>Fill fields</Trans>
               </Button>
             </DialogFooter>
           </form>
