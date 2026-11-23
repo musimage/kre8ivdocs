@@ -36,9 +36,9 @@ const NON_AUTO_SIGNABLE_ACTION_AUTH_TYPES: string[] = [
 
 // The threshold for the number of fields that could be autosigned before displaying the dialog
 //
-// Reasoning: If there aren't that many fields, it's likely going to be easier to manually sign each one
-// while for larger documents with many fields it will be beneficial to sign away the boilerplate fields.
-const AUTO_SIGN_THRESHOLD = 5;
+// Reasoning: The A.R.I.S.E. Guardian form has six auto-signable fields (name, four initials, date).
+// Keep this high enough that opening that form does not pop the auto-sign dialog.
+const AUTO_SIGN_THRESHOLD = 6;
 
 export type DocumentSigningAutoSignProps = {
   recipient: Pick<Recipient, 'id' | 'token'>;

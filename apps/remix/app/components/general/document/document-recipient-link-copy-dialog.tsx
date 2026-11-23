@@ -58,7 +58,7 @@ export const DocumentRecipientLinkCopyDialog = ({ trigger, recipients }: Documen
   };
 
   useEffect(() => {
-    if (actionSearchParam === 'view-signing-links') {
+    if (actionSearchParam === 'view-signing-links' || actionSearchParam === 'copy-links') {
       setOpen(true);
       updateSearchParams({ action: null });
     }

@@ -1,5 +1,5 @@
 import { prisma } from '@documenso/prisma';
-import { DocumentSource, EnvelopeType, WebhookTriggerEvents } from '@prisma/client';
+import { DocumentSource, EnvelopeType, FieldType, WebhookTriggerEvents } from '@prisma/client';
 import pMap from 'p-map';
 import { omit } from 'remeda';
 
@@ -195,19 +195,33 @@ export const duplicateEnvelope = async ({ id, userId, teamId, overrides }: Dupli
             fields: includeFields
               ? {
                   createMany: {
-                    data: recipient.fields.map((field) => ({
-                      envelopeId: duplicatedEnvelope.id,
-                      envelopeItemId: oldEnvelopeItemToNewEnvelopeItemIdMap[field.envelopeItemId],
-                      type: field.type,
-                      page: field.page,
-                      positionX: field.positionX,
-                      positionY: field.positionY,
-                      width: field.width,
-                      height: field.height,
-                      customText: '',
-                      inserted: false,
-                      fieldMeta: field.fieldMeta as PrismaJson.FieldMeta,
-                    })),
+                    data: recipient.fields.map((field) => {
+                      // Keep staff-typed locked text and checkbox values. Never copy
+                      // signature, initials, name, date, or email insertions.
+                      const keepPrefill = (
+                        [
+                          FieldType.TEXT,
+                          FieldType.NUMBER,
+                          FieldType.CHECKBOX,
+                          FieldType.RADIO,
+                          FieldType.DROPDOWN,
+                        ] as FieldType[]
+                      ).includes(field.type);
+
+                      return {
+                        envelopeId: duplicatedEnvelope.id,
+                        envelopeItemId: oldEnvelopeItemToNewEnvelopeItemIdMap[field.envelopeItemId],
+                        type: field.type,
+                        page: field.page,
+                        positionX: field.positionX,
+                        positionY: field.positionY,
+                        width: field.width,
+                        height: field.height,
+                        customText: keepPrefill ? field.customText : '',
+                        inserted: keepPrefill ? field.inserted : false,
+                        fieldMeta: field.fieldMeta as PrismaJson.FieldMeta,
+                      };
+                    }),
                   },
                 }
               : undefined,

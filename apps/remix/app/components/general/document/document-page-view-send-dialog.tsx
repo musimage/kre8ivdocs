@@ -16,6 +16,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@documenso/ui/primitives/dialog';
+import { Tabs, TabsList, TabsTrigger } from '@documenso/ui/primitives/tabs';
 import { useToast } from '@documenso/ui/primitives/use-toast';
 import { useLingui } from '@lingui/react';
 import { Trans } from '@lingui/react/macro';
@@ -36,6 +37,9 @@ export const DocumentPageViewSendDialog = ({ envelope }: DocumentPageViewSendDia
   const draftEmailsRef = useRef<DraftRecipientEmailsHandle>(null);
   const [open, setOpen] = useState(false);
   const [sending, setSending] = useState(false);
+  const [distributionMethod, setDistributionMethod] = useState<DocumentDistributionMethod>(
+    envelope.documentMeta?.distributionMethod ?? DocumentDistributionMethod.EMAIL,
+  );
   const utils = trpc.useUtils();
   const { mutateAsync: distributeEnvelope } = trpc.envelope.distribute.useMutation();
 
@@ -44,6 +48,7 @@ export const DocumentPageViewSendDialog = ({ envelope }: DocumentPageViewSendDia
   }
 
   const documentRootPath = formatDocumentsPath(envelope.team.url);
+  const isLinkOnly = distributionMethod === DocumentDistributionMethod.NONE;
 
   const onSend = async () => {
     if (sending) {
@@ -70,13 +75,18 @@ export const DocumentPageViewSendDialog = ({ envelope }: DocumentPageViewSendDia
       await distributeEnvelope({
         envelopeId: envelope.id,
         meta: {
-          distributionMethod: DocumentDistributionMethod.EMAIL,
+          distributionMethod,
         },
       });
 
       await utils.envelope.get.invalidate({ envelopeId: envelope.id });
       setOpen(false);
-      await navigate(`${documentRootPath}/${envelope.id}`);
+
+      const nextPath = isLinkOnly
+        ? `${documentRootPath}/${envelope.id}?action=view-signing-links`
+        : `${documentRootPath}/${envelope.id}`;
+
+      await navigate(nextPath);
     } catch (err) {
       const error = AppError.parseError(err);
       const errorMessage = getDistributeErrorMessage(error.code);
@@ -106,9 +116,40 @@ export const DocumentPageViewSendDialog = ({ envelope }: DocumentPageViewSendDia
             <Trans>Send Document</Trans>
           </DialogTitle>
           <DialogDescription>
-            <Trans>Check the emails, then send. The student email can be left blank if the student has no email.</Trans>
+            {isLinkOnly ? (
+              <Trans>
+                No emails will be sent. After you send, you can copy the signing links and share them yourself.
+              </Trans>
+            ) : (
+              <Trans>
+                Check the emails, then send. The student email can be left blank if the student has no email.
+              </Trans>
+            )}
           </DialogDescription>
         </DialogHeader>
+
+        <Tabs
+          value={distributionMethod}
+          onValueChange={(value) => setDistributionMethod(value as DocumentDistributionMethod)}
+          className="mb-2"
+        >
+          <TabsList className="w-full">
+            <TabsTrigger
+              className="w-full"
+              value={DocumentDistributionMethod.EMAIL}
+              data-testid="document-page-send-method-email"
+            >
+              <Trans>Email</Trans>
+            </TabsTrigger>
+            <TabsTrigger
+              className="w-full"
+              value={DocumentDistributionMethod.NONE}
+              data-testid="document-page-send-method-none"
+            >
+              <Trans>None</Trans>
+            </TabsTrigger>
+          </TabsList>
+        </Tabs>
 
         <DraftRecipientEmails
           ref={draftEmailsRef}
@@ -131,7 +172,7 @@ export const DocumentPageViewSendDialog = ({ envelope }: DocumentPageViewSendDia
             loading={sending}
             data-testid="document-page-send-confirm"
           >
-            <Trans>Send</Trans>
+            {isLinkOnly ? <Trans>Create signing links</Trans> : <Trans>Send</Trans>}
           </Button>
         </DialogFooter>
       </DialogContent>
