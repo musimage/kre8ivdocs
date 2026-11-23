@@ -1,7 +1,12 @@
-import { RecipientRole } from '@prisma/client';
+import { FieldType, RecipientRole, SigningStatus } from '@prisma/client';
 import { describe, expect, it } from 'vitest';
 
-import { isAssistantLastSigner, normalizeRecipientSigningOrders, sortRecipientsForSigningOrder } from './recipients';
+import {
+  canRecipientBeModified,
+  isAssistantLastSigner,
+  normalizeRecipientSigningOrders,
+  sortRecipientsForSigningOrder,
+} from './recipients';
 
 describe('recipient signing order helpers', () => {
   it('sorts CC recipients after ordered active recipients', () => {
@@ -111,6 +116,42 @@ describe('recipient signing order helpers', () => {
         { role: RecipientRole.ASSISTANT },
         { role: RecipientRole.SIGNER },
         { role: RecipientRole.CC },
+      ]),
+    ).toBe(false);
+  });
+});
+
+describe('canRecipientBeModified', () => {
+  const recipient = {
+    id: 1,
+    name: 'Example Guardian',
+    email: 'guardian@example.test',
+    role: RecipientRole.SIGNER,
+    signingStatus: SigningStatus.NOT_SIGNED,
+  };
+
+  it('allows changes when only staff-typed form fields are inserted', () => {
+    expect(
+      canRecipientBeModified(recipient, [
+        { recipientId: 1, inserted: true, type: FieldType.TEXT },
+        { recipientId: 1, inserted: true, type: FieldType.CHECKBOX },
+      ]),
+    ).toBe(true);
+  });
+
+  it('blocks changes after a signature-style field is inserted', () => {
+    expect(
+      canRecipientBeModified(recipient, [
+        { recipientId: 1, inserted: true, type: FieldType.TEXT },
+        { recipientId: 1, inserted: true, type: FieldType.INITIALS },
+      ]),
+    ).toBe(false);
+  });
+
+  it('blocks changes after the recipient has signed', () => {
+    expect(
+      canRecipientBeModified({ ...recipient, signingStatus: SigningStatus.SIGNED }, [
+        { recipientId: 1, inserted: true, type: FieldType.TEXT },
       ]),
     ).toBe(false);
   });

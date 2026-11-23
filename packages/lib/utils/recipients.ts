@@ -1,6 +1,6 @@
 import { isSignatureFieldType } from '@documenso/prisma/guards/is-signature-field';
 import type { Envelope, Field, Recipient } from '@prisma/client';
-import { EnvelopeType, RecipientRole, SigningStatus } from '@prisma/client';
+import { EnvelopeType, FieldType, RecipientRole, SigningStatus } from '@prisma/client';
 
 import { NEXT_PUBLIC_WEBAPP_URL } from '../constants/app';
 import { AppError, AppErrorCode } from '../errors/app-error';
@@ -184,7 +184,7 @@ export const formatSigningLink = (token: string) => `${NEXT_PUBLIC_WEBAPP_URL()}
  */
 export const canRecipientBeModified = (
   recipient: TRecipientLite,
-  fields: Pick<Field, 'recipientId' | 'inserted'>[],
+  fields: Array<Pick<Field, 'recipientId' | 'inserted'> & Partial<Pick<Field, 'type'>>>,
 ) => {
   if (!recipient) {
     return false;
@@ -200,8 +200,27 @@ export const canRecipientBeModified = (
     return false;
   }
 
-  // Deny if the recipient has inserted any fields.
-  if (fields.some((field) => field.recipientId === recipient.id && field.inserted)) {
+  // Deny if the recipient has filled a signing field. Staff-typed form values
+  // (text, checkboxes, and similar) are not signer interaction, so they must
+  // not lock the recipient name or email on a draft.
+  const signerActionTypes: FieldType[] = [
+    FieldType.SIGNATURE,
+    FieldType.FREE_SIGNATURE,
+    FieldType.INITIALS,
+    FieldType.NAME,
+    FieldType.DATE,
+    FieldType.EMAIL,
+  ];
+
+  if (
+    fields.some(
+      (field) =>
+        field.recipientId === recipient.id &&
+        field.inserted &&
+        field.type !== undefined &&
+        signerActionTypes.includes(field.type),
+    )
+  ) {
     return false;
   }
 
@@ -247,7 +266,7 @@ export const canEditorRecipientBeModified = (
  */
 export const canRecipientFieldsBeModified = (
   recipient: TRecipientLite,
-  fields: Pick<Field, 'recipientId' | 'inserted'>[],
+  fields: Array<Pick<Field, 'recipientId' | 'inserted'> & Partial<Pick<Field, 'type'>>>,
 ) => {
   if (!canRecipientBeModified(recipient, fields)) {
     return false;
