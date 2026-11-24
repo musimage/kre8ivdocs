@@ -12,6 +12,7 @@ import { downloadDocumentRoute } from './download-document';
 import { downloadDocumentAuditLogsRoute } from './download-document-audit-logs';
 import { downloadDocumentBetaRoute } from './download-document-beta';
 import { downloadDocumentCertificateRoute } from './download-document-certificate';
+import { downloadDocumentPrintableRoute } from './download-document-printable';
 import { duplicateDocumentRoute } from './duplicate-document';
 import { findDocumentAuditLogsRoute } from './find-document-audit-logs';
 import { findDocumentsRoute } from './find-documents';
@@ -35,6 +36,7 @@ export const documentRouter = router({
   delete: deleteDocumentRoute,
   duplicate: duplicateDocumentRoute,
   downloadCertificate: downloadDocumentCertificateRoute,
+  downloadPrintable: downloadDocumentPrintableRoute,
   distribute: distributeDocumentRoute,
   redistribute: redistributeDocumentRoute,
   search: searchDocumentRoute,

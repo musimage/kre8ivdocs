@@ -10,8 +10,6 @@ import {
   DocumentReadOnlyFields,
   mapFieldsWithRecipients,
 } from '@documenso/ui/components/document/document-read-only-fields';
-import { DocumentDraftFillFields } from '~/components/general/document/document-draft-fill-fields';
-import { DocumentRejectedFixButton } from '~/components/general/document/document-rejected-fix-button';
 import { cn } from '@documenso/ui/lib/utils';
 import { Badge } from '@documenso/ui/primitives/badge';
 import { Button } from '@documenso/ui/primitives/button';
@@ -23,13 +21,15 @@ import { DocumentStatus } from '@prisma/client';
 import { ChevronLeft, Users2 } from 'lucide-react';
 import { Link } from 'react-router';
 import { match } from 'ts-pattern';
-
+import { DocumentDraftFillFields } from '~/components/general/document/document-draft-fill-fields';
 import { DocumentPageViewButton } from '~/components/general/document/document-page-view-button';
 import { DocumentPageViewDropdown } from '~/components/general/document/document-page-view-dropdown';
 import { DocumentPageViewInformation } from '~/components/general/document/document-page-view-information';
 import { DocumentPageViewRecentActivity } from '~/components/general/document/document-page-view-recent-activity';
 import { DocumentPageViewRecipients } from '~/components/general/document/document-page-view-recipients';
+import { DocumentPrintDownloadButton } from '~/components/general/document/document-print-download-button';
 import { DocumentRecipientLinkCopyDialog } from '~/components/general/document/document-recipient-link-copy-dialog';
+import { DocumentRejectedFixButton } from '~/components/general/document/document-rejected-fix-button';
 import {
   DocumentStatus as DocumentStatusComponent,
   FRIENDLY_STATUS_MAP,
@@ -247,9 +247,7 @@ export default function DocumentPage({ params }: Route.ComponentProps) {
                   .with(DocumentStatus.REJECTED, () => <Trans>This document has been rejected by a recipient</Trans>)
                   .with(DocumentStatus.CANCELLED, () => <Trans>This document has been cancelled</Trans>)
                   .with(DocumentStatus.DRAFT, () => (
-                    <>
-                      Click a box on the PDF to type. Checkboxes toggle. Signatures wait for parents.
-                    </>
+                    <>Click a box on the PDF to type. Checkboxes toggle. Signatures wait for parents.</>
                   ))
                   .with(DocumentStatus.PENDING, () => {
                     const pendingRecipients = envelope.recipients.filter(
@@ -272,6 +270,10 @@ export default function DocumentPage({ params }: Route.ComponentProps) {
                   <DocumentRejectedFixButton envelope={envelope} />
                 ) : (
                   <DocumentPageViewButton envelope={envelope} />
+                )}
+
+                {envelope.status === DocumentStatus.DRAFT && (
+                  <DocumentPrintDownloadButton className="mt-2" envelopeId={envelope.id} />
                 )}
               </div>
             </section>
